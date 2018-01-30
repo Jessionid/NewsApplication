@@ -11,9 +11,7 @@ import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-
 import com.example.jession_ding.newsapplication.util.LogUtil;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -50,9 +48,10 @@ public class GuideActivity extends AppCompatActivity {
         bt_guideactivity_enter = (Button) findViewById(R.id.bt_guideactivity_enter);
         ll_guideactivity_indicator = (LinearLayout) findViewById(R.id.ll_guideactivity_indicator);
         rp_guideactivity = findViewById(R.id.rp_guideactivity);
-        vp_guideactivity_guide.setAdapter(new MyGuidePageAdapter());
 
         initImageList();
+
+        vp_guideactivity_guide.setAdapter(new MyGuidePageAdapter());
 
         initIndicator();
         // addOnPageChangeListener 当页面变化的时候

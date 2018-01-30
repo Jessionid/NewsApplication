@@ -9,7 +9,6 @@ import android.view.animation.AnimationSet;
 import android.view.animation.RotateAnimation;
 import android.view.animation.ScaleAnimation;
 import android.widget.RelativeLayout;
-
 import com.example.jession_ding.newsapplication.util.LogUtil;
 
 public class SplashActivity extends Activity {

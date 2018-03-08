@@ -2,9 +2,11 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/Indicatorlibrary/Indicatorlibrary.iml" filepath="$PROJECT_DIR$/Indicatorlibrary/Indicatorlibrary.iml" />
       <module fileurl="file://$PROJECT_DIR$/NewsApplication.iml" filepath="$PROJECT_DIR$/NewsApplication.iml" />
       <module fileurl="file://$PROJECT_DIR$/SlidingMenulibrary/SlidingMenulibrary.iml" filepath="$PROJECT_DIR$/SlidingMenulibrary/SlidingMenulibrary.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/indictorsample/indictorsample.iml" filepath="$PROJECT_DIR$/indictorsample/indictorsample.iml" />
     </modules>
   </component>
 </project>

@@ -1,0 +1,50 @@
+[
+    {
+        "merged": "F:\\Android\\Workspace\\NewsApplication\\indictorsample\\build\\intermediates\\res\\merged\\debug\\layout\\simple_underlines.xml",
+        "source": "F:\\Android\\Workspace\\NewsApplication\\indictorsample\\src\\main\\res\\layout\\simple_underlines.xml"
+    },
+    {
+        "merged": "F:\\Android\\Workspace\\NewsApplication\\indictorsample\\build\\intermediates\\res\\merged\\debug\\layout\\simple_titles.xml",
+        "source": "F:\\Android\\Workspace\\NewsApplication\\indictorsample\\src\\main\\res\\layout\\simple_titles.xml"
+    },
+    {
+        "merged": "F:\\Android\\Workspace\\NewsApplication\\indictorsample\\build\\intermediates\\res\\merged\\debug\\layout\\simple_circles_vertical.xml",
+        "source": "F:\\Android\\Workspace\\NewsApplication\\indictorsample\\src\\main\\res\\layout\\simple_circles_vertical.xml"
+    },
+    {
+        "merged": "F:\\Android\\Workspace\\NewsApplication\\indictorsample\\build\\intermediates\\res\\merged\\debug\\layout\\themed_titles.xml",
+        "source": "F:\\Android\\Workspace\\NewsApplication\\indictorsample\\src\\main\\res\\layout\\themed_titles.xml"
+    },
+    {
+        "merged": "F:\\Android\\Workspace\\NewsApplication\\indictorsample\\build\\intermediates\\res\\merged\\debug\\layout\\simple_titles_bottom.xml",
+        "source": "F:\\Android\\Workspace\\NewsApplication\\indictorsample\\src\\main\\res\\layout\\simple_titles_bottom.xml"
+    },
+    {
+        "merged": "F:\\Android\\Workspace\\NewsApplication\\indictorsample\\build\\intermediates\\res\\merged\\debug\\layout\\themed_lines.xml",
+        "source": "F:\\Android\\Workspace\\NewsApplication\\indictorsample\\src\\main\\res\\layout\\themed_lines.xml"
+    },
+    {
+        "merged": "F:\\Android\\Workspace\\NewsApplication\\indictorsample\\build\\intermediates\\res\\merged\\debug\\layout\\themed_underlines.xml",
+        "source": "F:\\Android\\Workspace\\NewsApplication\\indictorsample\\src\\main\\res\\layout\\themed_underlines.xml"
+    },
+    {
+        "merged": "F:\\Android\\Workspace\\NewsApplication\\indictorsample\\build\\intermediates\\res\\merged\\debug\\layout\\themed_circles.xml",
+        "source": "F:\\Android\\Workspace\\NewsApplication\\indictorsample\\src\\main\\res\\layout\\themed_circles.xml"
+    },
+    {
+        "merged": "F:\\Android\\Workspace\\NewsApplication\\indictorsample\\build\\intermediates\\res\\merged\\debug\\layout\\simple_tabs.xml",
+        "source": "F:\\Android\\Workspace\\NewsApplication\\indictorsample\\src\\main\\res\\layout\\simple_tabs.xml"
+    },
+    {
+        "merged": "F:\\Android\\Workspace\\NewsApplication\\indictorsample\\build\\intermediates\\res\\merged\\debug\\layout\\simple_icons.xml",
+        "source": "F:\\Android\\Workspace\\NewsApplication\\indictorsample\\src\\main\\res\\layout\\simple_icons.xml"
+    },
+    {
+        "merged": "F:\\Android\\Workspace\\NewsApplication\\indictorsample\\build\\intermediates\\res\\merged\\debug\\layout\\simple_lines.xml",
+        "source": "F:\\Android\\Workspace\\NewsApplication\\indictorsample\\src\\main\\res\\layout\\simple_lines.xml"
+    },
+    {
+        "merged": "F:\\Android\\Workspace\\NewsApplication\\indictorsample\\build\\intermediates\\res\\merged\\debug\\layout\\simple_circles.xml",
+        "source": "F:\\Android\\Workspace\\NewsApplication\\indictorsample\\src\\main\\res\\layout\\simple_circles.xml"
+    }
+]

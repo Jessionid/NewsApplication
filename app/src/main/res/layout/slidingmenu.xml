@@ -4,7 +4,7 @@
           android:orientation="vertical"
           android:layout_width="match_parent"
           android:layout_height="match_parent"
-          android:background="@color/abc_search_url_text_normal">
+          android:background="#000">
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"

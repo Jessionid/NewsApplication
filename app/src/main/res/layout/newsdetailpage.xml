@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:orientation="vertical">
+
+<!--    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="200dp">
+        <com.example.jession_ding.newsapplication.view.TopNewsViewPager
+            android:id="@+id/vp_newsdetail_topnews"
+            android:layout_width="match_parent"
+            android:layout_height="200dp">
+        </com.example.jession_ding.newsapplication.view.TopNewsViewPager>
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#44000000"
+            android:layout_alignParentBottom="true">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="15sp"
+                android:layout_centerVertical="true"
+                android:paddingLeft="10dp"
+                android:id="@+id/tv_newsdetail_topnewsTitle"/>
+            <com.viewpagerindicator.CirclePageIndicator
+                android:id="@+id/indicator_topnews"
+                android:padding="10dip"
+                android:layout_height="wrap_content"
+                android:layout_width="fill_parent"
+                android:layout_centerInParent="true"
+                app:radius="5dp"
+                app:fillColor="#FFFF0000"
+                app:pageColor="#FF000000"
+                app:strokeColor="#FF000000"
+                app:strokeWidth="1dp"
+                />
+        </RelativeLayout>
+    </RelativeLayout>-->
+
+    <ListView
+        android:id="@+id/lv_newsdetailpage_newslist"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"></ListView>
+</LinearLayout>

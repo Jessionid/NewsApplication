@@ -1,19 +1,18 @@
 package com.example.jession_ding.newsapplication.menupage;
 
 import android.app.Activity;
-import android.graphics.Color;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
-import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.TextView;
+
 import com.example.jession_ding.newsapplication.R;
+import com.example.jession_ding.newsapplication.activity.HomeActivity;
 import com.example.jession_ding.newsapplication.bean.Categories;
+import com.example.jession_ding.newsapplication.newsdetailmenupage.NewsDetailPage;
 import com.example.jession_ding.newsapplication.util.LogUtil;
+import com.example.jession_ding.newsapplication.view.NewsMenuPageViewPage;
 import com.viewpagerindicator.TabPageIndicator;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * @author Jession Ding
@@ -24,9 +23,9 @@ import java.util.List;
 public class NewsMenuPage extends BaseMenuPage{
 
     private static final String TAG = "NewsMenuPage";
-    private ViewPager vp_newsmenupage_content;
-    List<TextView> newsMenuPageList;
+    // List<TextView> newsMenuPageList;
     private TabPageIndicator indicator_newsmenupage_title;
+    private NewsMenuPageViewPage vp_newsmenupage_content;
 
     public NewsMenuPage(Activity mActivity, Categories.MenuDataInfo menuDataInfo) {
         super(mActivity, menuDataInfo);
@@ -48,7 +47,7 @@ public class NewsMenuPage extends BaseMenuPage{
 
     @Override
     public void initData() {
-        newsMenuPageList = new ArrayList<TextView>();
+/*        newsMenuPageList = new ArrayList<TextView>();
         LogUtil.i(TAG,"menuDataInfo.childrenInfo.size() = " + menuDataInfo.children.size());
         for(int i=0;i<menuDataInfo.children.size();i++) {
             String title = menuDataInfo.children.get(i).title;
@@ -58,17 +57,41 @@ public class NewsMenuPage extends BaseMenuPage{
             textView.setTextColor(Color.RED);
             textView.setGravity(Gravity.CENTER);
             newsMenuPageList.add(textView);
-        }
+        }*/
         vp_newsmenupage_content.setAdapter(new MyNewsMenuPageAdapter());
         // java.lang.IllegalStateException: ViewPager does not have adapter instance
         // 注意：indictor 的使用，必须要在 vp 设置 adapter 之后，才能关联 vp
         indicator_newsmenupage_title.setViewPager(vp_newsmenupage_content);
+        vp_newsmenupage_content.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
+            @Override
+            public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
+                HomeActivity homeActivity = (HomeActivity) mActivity;
+                LogUtil.i(TAG,"position = " + position);
+                if(position==0) {
+                    // 侧边栏可以滑动，enbale
+                    homeActivity.setSlidingmenuEnable(true);
+                } else {
+                    // 侧边栏不可以滑动，disable
+                    homeActivity.setSlidingmenuEnable(false);
+                }
+            }
+
+            @Override
+            public void onPageSelected(int position) {
+
+            }
+
+            @Override
+            public void onPageScrollStateChanged(int state) {
+
+            }
+        });
     }
     class MyNewsMenuPageAdapter extends PagerAdapter {
 
         @Override
         public int getCount() {
-            return newsMenuPageList.size();
+            return menuDataInfo.children.size();
         }
 
         @Override
@@ -78,9 +101,10 @@ public class NewsMenuPage extends BaseMenuPage{
 
         @Override
         public Object instantiateItem(ViewGroup container, int position) {
-            TextView textView = newsMenuPageList.get(position);
-            container.addView(textView);
-            return textView;//super.instantiateItem(container, position);
+            // TextView textView = newsMenuPageList.get(position);
+            NewsDetailPage newsDetailPage = new NewsDetailPage(mActivity, menuDataInfo.children.get(position) );
+            container.addView(newsDetailPage.mNewsDetailView);
+            return newsDetailPage.mNewsDetailView;//super.instantiateItem(container, position);
         }
         @Override
         public CharSequence getPageTitle(int position) {

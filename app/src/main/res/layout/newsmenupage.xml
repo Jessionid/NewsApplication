@@ -7,10 +7,10 @@
         android:id="@+id/indicator_newsmenupage_title"
         android:layout_height="wrap_content"
         android:layout_width="fill_parent"/>
-    <android.support.v4.view.ViewPager
+    <com.example.jession_ding.newsapplication.view.NewsMenuPageViewPage
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:id="@+id/vp_newsmenupage_content">
-    </android.support.v4.view.ViewPager>
+    </com.example.jession_ding.newsapplication.view.NewsMenuPageViewPage>
 
 </LinearLayout>

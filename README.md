@@ -245,8 +245,864 @@ https://github.com/jfeinstein10/SlidingMenu
 
 ### Part Ⅱ
 
+首先看其框架图，
+
+![框架图](http://wx4.sinaimg.cn/mw690/89195e42gy1fp1uyz7lgvj20ix0f20sv.jpg)
+
+##### 1. ImageButton 的使用介绍
+```java
+        <ImageButton
+            android:id="@+id/ib_pageview_leftbutton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:layout_marginLeft="30dp"
+            android:background="@drawable/img_menu"
+            android:visibility="invisible"/>
+```
+与 Button 的区别为：可根据背景图片的大小`android:background="@drawable/img_menu"`，而改变 ImageButton 的大小。若使用 Button，再设置图片，则图片是 Button 中的默认大小。
+
+##### 2. RadioGroup 中 RadioButton 的使用
+```java
+    <RadioGroup
+        android:id="@+id/rg_contentfragment_bottom"
+        android:layout_width="match_parent"
+        android:layout_height="65dp"
+        android:background="@drawable/bottom_tab_bg"
+        android:gravity="center"
+        android:orientation="horizontal">
+
+        <RadioButton
+            android:id="@+id/rb_contentfragment_home"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:button="@null"
+            android:drawableTop="@drawable/radiobutton_bg_home"
+            android:gravity="center"
+            android:text="首页"
+            android:textColor="@drawable/radiobutton_text_color"/>
+
+        <RadioButton
+            android:id="@+id/rb_contentfragment_newscenter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:button="@null"
+            android:drawableTop="@drawable/radiobutton_bg_newscenter"
+            android:gravity="center"
+            android:text="新闻中心"
+            android:textColor="@drawable/radiobutton_text_color"/>
+    </RadioGroup>
+```
+```
+两个注意点：
+1. android:button="@null"   去掉前面的圆点
+2. android:drawableTop="@drawable/radiobutton_bg_newscenter"    把图片设置到上面
+```
+
+##### 3. BasePage 和其他 Page 页面的分层
+如图，看其填充流程，
+
+![填充流程](http://wx3.sinaimg.cn/mw690/89195e42gy1fp1vm5kr0dj20ie095mx4.jpg)
+
+BasePage 做初始化操作，进行初始化填充。其他 Page 则做相应的客制化操作。
+
+MainActivity、LeftFargment、ContentFragment 和 子类 Page 的引用传递图
+![引用传递图示](http://wx2.sinaimg.cn/mw690/89195e42gy1fp2v4jpexoj20mi0ca0st.jpg)
+
+##### 4. xUtils 和 xUtils3 的使用
+
+###### 4.1 xUtils 的使用
+在 libs 文件夹下，导入其 jar 包，并 Add As Library... 一下，再使用代码：
+```java
+        HttpUtils httpUtils = new HttpUtils();
+        httpUtils.send(HttpRequest.HttpMethod.GET, Constants.newsList, new RequestCallBack<String>() {
+            @Override
+            public void onSuccess(ResponseInfo<String> responseInfo) {
+                LogUtil.d(TAG, "onSuccess = " + responseInfo.result);
+                parseJsonString(responseInfo.result);
+            }
+
+            @Override
+            public void onFailure(com.lidroid.xutils.exception.HttpException e, String s) {
+                LogUtil.d(TAG, "onFailure = " + s + "; e = " + e.getExceptionCode() + ";" + e.getMessage());
+            }
+        });
+```
+其他详细使用方法，如下：
+
+https://github.com/wyouflf/xUtils
+
+###### 4.2 xUtils3 的使用
+首先在 build.gradle 中添加依赖`compile 'org.xutils:xutils:3.3.36'
+`，然后按要求进行配置
+```java
+        RequestParams params = new RequestParams(Constants.newsList);
+        //params.setSslSocketFactory();   //设置ssl
+        Callback.Cancelable cancelable = x.http().get(params, new Callback.CommonCallback<String>() {
+            @Override
+            public void onSuccess(String result) {
+                LogUtil.d(TAG, "onSuccess = " + result.toString());
+                Toast.makeText(mActivity,result.toString(),Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onError(Throwable ex, boolean isOnCallback) {
+                if (ex instanceof HttpException) { // 网络错误
+                    HttpException httpEx = (HttpException) ex;
+                    int responseCode = httpEx.getCode();
+                    String responseMsg = httpEx.getMessage();
+                    String errorResult = httpEx.getResult();
+                    LogUtil.d(TAG, "getDataFromServer,onError;responseCode = " + responseCode + ";"
+                            + "responseMsg = " + responseMsg + ";" + "errorResult = " + errorResult);
+                } else { // 其他错误
+                    LogUtil.d(TAG, "getDataFromServer==>onError 其他错误");
+                }
+            }
+
+            @Override
+            public void onCancelled(CancelledException cex) {
+                LogUtil.d(TAG, "getDataFromServer==>onCancelled");
+            }
+
+            @Override
+            public void onFinished() {
+                LogUtil.d(TAG, "getDataFromServer==>onFinished");
+            }
+        });
+        //cancelable.cancel(); // 取消请求
+```
+其他详细使用方法，如下：
+
+https://github.com/wyouflf/xUtils3
+
+##### 5. 使用 JSONObject 和  Gson 的解析使用
+JSON 格式如下：
+```java
+{
+    "data": [
+        {
+            "children": [
+                {
+                    "id": 10007,
+                    "title": "北京",
+                    "type": 1,
+                    "url": "/10007/list_1.json"
+                },
+                {
+                    "id": 10006,
+                    "title": "中国",
+                    "type": 1,
+                    "url": "/10006/list_1.json"
+                },
+                {
+                    "id": 10008,
+                    "title": "国际",
+                    "type": 1,
+                    "url": "/10008/list_1.json"
+                },
+                {
+                    "id": 10010,
+                    "title": "体育",
+                    "type": 1,
+                    "url": "/10010/list_1.json"
+                },
+                {
+                    "id": 10091,
+                    "title": "生活",
+                    "type": 1,
+                    "url": "/10091/list_1.json"
+                },
+                {
+                    "id": 10012,
+                    "title": "旅游",
+                    "type": 1,
+                    "url": "/10012/list_1.json"
+                },
+                {
+                    "id": 10095,
+                    "title": "科技",
+                    "type": 1,
+                    "url": "/10095/list_1.json"
+                },
+                {
+                    "id": 10009,
+                    "title": "军事",
+                    "type": 1,
+                    "url": "/10009/list_1.json"
+                },
+                {
+                    "id": 10093,
+                    "title": "时尚",
+                    "type": 1,
+                    "url": "/10093/list_1.json"
+                },
+                {
+                    "id": 10011,
+                    "title": "财经",
+                    "type": 1,
+                    "url": "/10011/list_1.json"
+                },
+                {
+                    "id": 10094,
+                    "title": "育儿",
+                    "type": 1,
+                    "url": "/10094/list_1.json"
+                },
+                {
+                    "id": 10105,
+                    "title": "汽车",
+                    "type": 1,
+                    "url": "/10105/list_1.json"
+                }
+            ],
+            "id": 10000,
+            "title": "新闻",
+            "type": 1
+        },
+        {
+            "id": 10002,
+            "title": "专题",
+            "type": 10,
+            "url": "/10006/list_1.json",
+            "url1": "/10007/list1_1.json"
+        },
+        {
+            "id": 10003,
+            "title": "组图",
+            "type": 2,
+            "url": "/10008/list_1.json"
+        },
+        {
+            "dayurl": "",
+            "excurl": "",
+            "id": 10004,
+            "title": "互动",
+            "type": 3,
+            "weekurl": ""
+        }
+    ],
+    "extend": [
+        10007,
+        10006,
+        10008,
+        10014,
+        10012,
+        10091,
+        10009,
+        10010,
+        10095
+    ],
+    "retcode": 200
+}
+```
+###### 5.1 使用 JSONObject 解析
+一层一层解析，
+```java
+        try {
+            JSONObject jsonObject = new JSONObject(result);
+            JSONArray data = jsonObject.getJSONArray("data");
+
+            JSONObject jsonObject0 = data.getJSONObject(0);
+            String title0 = jsonObject0.getString("title");
+            LogUtil.i(TAG,"menu1 = " + title0);
+
+            JSONObject jsonObject1 = data.getJSONObject(1);
+            String title1 = jsonObject1.getString("title");
+            LogUtil.i(TAG,"menu2 = " + title1);
+
+            JSONObject jsonObject2 = data.getJSONObject(2);
+            String title2 = jsonObject2.getString("title");
+            LogUtil.i(TAG,"menu3 = " + title2);
+
+            JSONObject jsonObject3 = data.getJSONObject(3);
+            String title3 = jsonObject3.getString("title");
+            LogUtil.i(TAG,"menu4 = " + title3);
+
+            MenuTitle menuTitle = new MenuTitle(title0,title1,title2,title3);
+
+            LeftMenuFragment leftMenuFragment = homeActivity.getLeftMenuFragment();
+            leftMenuFragment.setMenuData(menuTitle);
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+```
+
+###### 5.2 使用 Gson 解析
+
+使用谷歌的开源框架 Gson 去解析，其原理是使用反射。
+
+首先，先加入其 jar 包，当然，导入依赖也可以。
+
+其次，先写好相关的 Javabean，格式和要求如下：
+```java
+// 用 Gson 填充 JavaBean 的原则
+    // 1.类里出现的成员变量的命名，需要与 json 字符串里的 key 一样；若不一样，不会报错，只是不能找到同名的 key，去给他赋值
+    // 2.如果你的 bean 里面多写了某个字段，也不会报错，只是不能找到同名的 key，去给他赋值
+    // 3.如果你的 bean 里少了某个字段，也不会报错，只是无法得到该字段的值
+public class Categories {
+    int retcode;
+    public ArrayList<MenuDataInfo> data;
+
+    public class MenuDataInfo {
+        int id;
+        public String title;
+        int type;
+        String url;
+        String url1;
+        @Override
+        public String toString() {
+            return "MenuDataInfo{" +
+                    "id=" + id +
+                    ", title='" + title + '\'' +
+                    ", type=" + type +
+                    ", url='" + url + '\'' +
+                    ", url1='" + url1 + '\'' +
+                    '}';
+        }
+    }
+
+    @Override
+    public String toString() {
+        return "Categories{" +
+                "retcode=" + retcode +
+                ", data=" + data +
+                '}';
+    }
+}
+```
+
+以下是把得到的 json 数据的每一个 value 值，填充到相应的变量中去
+```java
+// Gson
+        Gson gson = new Gson();
+        Categories categories = gson.fromJson(result, Categories.class);
+        LogUtil.i(TAG,categories.toString());
+```
+
+##### 6. ListView 中 item 的点击变化
+每一个 item，有一个 TextView 组成
+```java
+    <TextView
+        android:id="@+id/tv_itemmenulist_menutitle"
+        android:layout_width="match_parent"
+        android:textSize="25sp"
+        android:padding="10dp"
+        android:layout_marginLeft="15dp"
+        android:drawableLeft="@drawable/leftmenu_title_pic"
+        android:layout_height="wrap_content"
+        android:textColor="@drawable/leftmenu_title_color"
+        android:enabled="false"/>
+```
+人为增加 listView 的点击事件`android:enabled="false"`。
+
+其中，`android:drawableLeft="@drawable/leftmenu_title_pic"`和`android:textColor="@drawable/leftmenu_title_color"`，点击改变其图像和文字的效果。
+
+在 ContentFragment 中，点击从服务器获取数据`newsPage.getDataFromServer1();`，并填充：
+```java
+    public void setMenuData(Categories categories) {
+        this.categories = categories;
+        myLeftMenuAdapter = new MyLeftMenuAdapter();
+        lv_fragmentleftmenu_menu.setAdapter(myLeftMenuAdapter);
+    }
+```
+
+每次点击 listView 中的 item 记录下`currentPosition = position;`，并在`myLeftMenuAdapter.notifyDataSetChanged();`之后，在 MyLeftMenuAdapter 中，进行 currentPosition 和 position 的判断，并改变相应的 item 状态。
+```java
+if(position!=currentPosition) {
+    tv_itemmenulist_menutitle.setEnabled(false);
+} else {
+    tv_itemmenulist_menutitle.setEnabled(true);
+    }
+```
 
 ### Part Ⅲ
 
+##### 1. 侧边栏中的 item 点击与其主题相对应的内容联动
+首先在 ListView 中，点击 item。进行相关的操作，
+```java
+    // 从这里去修改 newsPage 中的 View
+    ContentFragment contentFragment = homeActivity.getContentFragment();
+    NewsPage newsPage = contentFragment.getNewsPage();
+    if(newsPage!=null) {
+        newsPage.changeNewsPageContent(position);
+        //LogUtil.i(TAG,"newsPage = " + newsPage);
+    }
+    // 让 slidingMenu 收回去
+    homeActivity.setSlidingMenuToggle();
+```
+
+在 NewsPage 中的方法，
+```java
+    public void changeNewsPageContent(int position) {
+        ll_pageview_content.removeAllViews();
+        BaseMenuPage baseMenuPage = newsMenuPage.get(position);
+        ll_pageview_content.addView(baseMenuPage.mMenuPageView);
+    }
+```
+每次点击，添加相应的主题，即：BaseMenuPage 的子类。
+
+在`parseJsonString()`方法中，初始化菜单 Page，使用方法`initMenuPage(Categories categories)`。
+```java
+    private void initMenuPage(Categories categories) {
+        newsMenuPage = new ArrayList<BaseMenuPage>();
+/*        for(int i=0;i<categories.data.size();i++) {
+            TextView textView = new TextView(mActivity);
+            textView.setText(categories.data.get(i).title);
+            textView.setGravity(Gravity.CENTER);
+            textView.setTextColor(Color.RED);
+            newsMenuPage.add(textView);
+        }*/
+        newsMenuPage.add(new NewsMenuPage(mActivity,categories.data.get(0)));
+        newsMenuPage.add(new TopicMenuPage(mActivity,categories.data.get(1)));
+        newsMenuPage.add(new PictureMenuPage(mActivity,categories.data.get(2)));
+        newsMenuPage.add(new InteractMenuPage(mActivity,categories.data.get(3)));
+
+        // 默认显示 listView 的第一个 item
+        changeNewsPageContent(0);
+    }
+```
+
+##### 2. BaseMenuPage 与 其他 NewsMenuPage 等的关系
+在 BaseMenuPage 中，进行初始化操作，
+```java
+public abstract class BaseMenuPage {
+    public Activity mActivity;
+    public View mMenuPageView;
+    public Categories.MenuDataInfo menuDataInfo;
+
+    public BaseMenuPage(Activity mActivity,Categories.MenuDataInfo menuDataInfo) {
+        this.mActivity = mActivity;
+        this.menuDataInfo = menuDataInfo;
+        mMenuPageView = initView();
+    }
+    public abstract View initView();
+    public abstract void initData();
+}
+```
+
+有几点需注意：
+```
+1. Categories.MenuDataInfo：为 Data 数据的每一个数组
+
+2. mMenuPageView：填充的 View，在其子类重写的 initView() 方法中填充
+
+3. 需先 this.menuDataInfo = menuDataInfo;再 mMenuPageView = initView();否则，子类的 initView() 中，拿不到 menuDataInfo 实例。
+```
+
+子类中，进行自定义操作,使用`View view = View.inflate(mActivity,R.layout.newsmenupage, null);`来填充，父类调用子类的`initData()`方法来添加 ViewPager。
+```java
+        ll_pageview_content.removeAllViews();
+        BaseMenuPage baseMenuPage = newsMenuPage.get(position);
+        // 父类调用子类重写的方法
+        baseMenuPage.initData();
+        ll_pageview_content.addView(baseMenuPage.mMenuPageView);
+```
+
+子类中的 initData() 方法，
+```java
+    public void initData() {
+        newsMenuPageList = new ArrayList<TextView>();
+        LogUtil.i(TAG,"menuDataInfo.childrenInfo.size() = " + menuDataInfo.children.size());
+        for(int i=0;i<menuDataInfo.children.size();i++) {
+            String title = menuDataInfo.children.get(i).title;
+            TextView textView = new TextView(mActivity);
+            textView.setText(title);
+            textView.setTextSize(30);
+            textView.setTextColor(Color.RED);
+            textView.setGravity(Gravity.CENTER);
+            newsMenuPageList.add(textView);
+        }
+        vp_newsmenupage_content.setAdapter(new MyNewsMenuPageAdapter());
+        // java.lang.IllegalStateException: ViewPager does not have adapter instance
+        // 注意：indictor 的使用，必须要在 vp 设置 adapter 之后，才能关联 vp
+        indicator_newsmenupage_title.setViewPager(vp_newsmenupage_content);
+    }
+```
+
+##### 3. 开源框架 ViewPagerIndicator 的使用
+先下载并解压，通过`import Module`一次导入其 library 库和其 sample 例子代码。
+
+然后，修改器配置，点击上面的`Make Module '×××'`，编译一下即可。
+
+sample 例子代码,可以用来学习和修改。
+
+其库的代码配置如下：
+##### 3.1 newsmenupage.xml 中的修改
+添加其自定义的控件`TabPageIndicator`,下面是 ViewPager。
+```java
+    <com.viewpagerindicator.TabPageIndicator
+        android:id="@+id/indicator_newsmenupage_title"
+        android:layout_height="wrap_content"
+        android:layout_width="fill_parent"/>
+    <android.support.v4.view.ViewPager
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:id="@+id/vp_newsmenupage_content">
+    </android.support.v4.view.ViewPager>
+```
+
+##### 3.2 在 NewsMenuPage 中，进行代码配置
+添加如下代码：
+```java
+vp_newsmenupage_content.setAdapter(new MyNewsMenuPageAdapter());
+// java.lang.IllegalStateException: ViewPager does not have adapter instance
+// 注意：indictor 的使用，必须要在 vp 设置 adapter 之后，才能关联 vp
+indicator_newsmenupage_title.setViewPager(vp_newsmenupage_content);
+```
+
+##### 3.3 增加 indicator 的文字
+在`MyNewsMenuPageAdapter`类中，重写`getPageTitle(int position)`方法，
+```java
+        @Override
+        public CharSequence getPageTitle(int position) {
+            //return CONTENT[position % CONTENT.length].toUpperCase();
+            return menuDataInfo.children.get(position).title;
+        }
+```
+
+##### 3.4 主题样式以及字体样式的一些修改和注意点
+首先，关于样式，有主题样式和字体样式。并且，主题样式中可以包含字体样式。这里举个例子，说明样式的优先级关系。比如，一个`Activity`拥有一个主题样式，此主题样式中含有字体样式，则此字体样式是此`Activity`的默认字体样式。若是，其中有个`button`中，选用的是另一个字体样式，则此`button`因为优先级的就近原则，选用这个字体样式，抛弃主题样式中的字体样式。
+
+首先，添加主题样式，在 App 的`AndroidManifest.xml`中添加，
+```java
+        <activity android:name=".activity.HomeActivity"
+                  android:theme="@style/Theme.PageIndicatorDefaults">
+        </activity>
+```
+
+先修改背景，`<item name="android:background">@drawable/vpi__tab_indicator_my</item>`
+```java
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Non focused states -->
+    <item android:state_focused="false" android:state_selected="false" android:state_pressed="false" android:drawable="@android:color/transparent" />
+    <item android:state_focused="false" android:state_selected="true"  android:state_pressed="false" android:drawable="@drawable/news_tab_item_bg_select" />
+
+    <!-- Focused states -->
+    <item android:state_focused="true" android:state_selected="false" android:state_pressed="false" android:drawable="@android:color/transparent" />
+    <item android:state_focused="true" android:state_selected="true"  android:state_pressed="false" android:drawable="@drawable/news_tab_item_bg_select" />
+
+    <!-- Pressed -->
+    <!--    Non focused states -->
+    <item android:state_focused="false" android:state_selected="false" android:state_pressed="true" android:drawable="@android:color/transparent" />
+    <item android:state_focused="false" android:state_selected="true"  android:state_pressed="true" android:drawable="@drawable/news_tab_item_bg_select" />
+
+    <!--    Focused states -->
+    <item android:state_focused="true" android:state_selected="false" android:state_pressed="true" android:drawable="@android:color/transparent" />
+    <item android:state_focused="true" android:state_selected="true"  android:state_pressed="true" android:drawable="@drawable/news_tab_item_bg_select" />
+</selector>
+```
+
+再修改 indicator 的文字点击颜色，`<item name="android:textColor">@drawable/vpi__textcolor_indicator_my</item>`
+```java
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Non focused states -->
+    <item android:state_focused="false" android:state_selected="false" android:state_pressed="false" android:color="#000" />
+    <item android:state_focused="false" android:state_selected="true"  android:state_pressed="false" android:color="#F00" />
+
+    <!-- Focused states -->
+    <item android:state_focused="true" android:state_selected="false" android:state_pressed="false" android:color="#000" />
+    <item android:state_focused="true" android:state_selected="true"  android:state_pressed="false" android:color="#F00" />
+
+    <!-- Pressed -->
+    <!--    Non focused states -->
+    <item android:state_focused="false" android:state_selected="false" android:state_pressed="true" android:color="#000" />
+    <item android:state_focused="false" android:state_selected="true"  android:state_pressed="true" android:color="#F00" />
+
+    <!--    Focused states -->
+    <item android:state_focused="true" android:state_selected="false" android:state_pressed="true" android:color="#000" />
+    <item android:state_focused="true" android:state_selected="true"  android:state_pressed="true" android:color="#F00" />
+</selector>
+```
+
+具体内容和下载如下所示：
+https://github.com/JakeWharton/ViewPagerIndicator
 
 ### Part Ⅳ
+
+##### 1. 解决 SlidingMenu 和 NewsMenuPage 中的 NewsMenuPageViewPage 的滑动冲突
+自定义 NewsMenuPageViewPage 继承自 ViewPager，在其中加入，
+```java
+        // 本质上是想去让 slidingmenu 在第0个 page 上，可以滑动，在第0个之外，不能滑动
+
+        // 父控件都会给到子控件来处理
+        // 虽想处理，但只有从第1个之后才处理
+        int currentItem = getCurrentItem();
+        if(currentItem!=0) {
+            getParent().requestDisallowInterceptTouchEvent(true);
+        } else {
+            // 第0个其实不想处理
+            getParent().requestDisallowInterceptTouchEvent(false);
+        }
+```
+
+##### 2. 填充 NewsDetailPage 中的数据
+在 NewsMenuPage 中，添加 NewsDetailPage 的 View，
+```java
+        @Override
+        public Object instantiateItem(ViewGroup container, int position) {
+            // TextView textView = newsMenuPageList.get(position);
+            NewsDetailPage newsDetailPage = new NewsDetailPage(mActivity, menuDataInfo.children.get(position) );
+            container.addView(newsDetailPage.mNewsDetailView);
+            return newsDetailPage.mNewsDetailView;//super.instantiateItem(container, position);
+        }
+```
+并显示 TabPageIndicator 的 title，
+```java
+        @Override
+        public CharSequence getPageTitle(int position) {
+            //return CONTENT[position % CONTENT.length].toUpperCase();
+            return menuDataInfo.children.get(position).title;
+        }
+```
+先 initView()，
+```java
+    public View initView() {
+        View view = View.inflate(mActivity, R.layout.newsdetailpage, null);
+        lv_newsdetailpage_newslist = view.findViewById(R.id.lv_newsdetailpage_newslist);
+
+        listHeader = View.inflate(mActivity, R.layout.item_listview_header, null);
+
+        vp_newsdetail_topnews = listHeader.findViewById(R.id.vp_newsdetail_topnews);
+        tv_newsdetail_topnewsTitle = listHeader.findViewById(R.id.tv_newsdetail_topnewsTitle);
+        indicator_topnews = listHeader.findViewById(R.id.indicator_topnews);
+
+        // 把整个 headerview 放到 listview 最前面
+        lv_newsdetailpage_newslist.addHeaderView(listHeader);
+
+        return view;
+    }
+```
+在 listView 中，加入`vp_newsdetail_topnews`，使其能够上下滑动
+
+然后执行，initData()，
+```java
+    private void initData() {
+        // http://localhost:8080/zhbj/10007/list_1.json
+        String url = Constants.TEST_ENGINE + "/zhbj" + newsDetailInfo.url;
+        LogUtil.i(TAG,"url = " + url);
+        getDataFromServer1(url);
+    }
+```
+开始下载数据并解析。
+
+##### 4. 使用 GsonFormat，解析 JSON 数据生成 JavaBean
+###### 步骤一 在 JavaBean 中，先写一个类
+
+###### 步骤二 在此类中，然后，点击上面的状态栏中的 Code——>Generate——>GsonFormat
+
+###### 步骤三 在填写栏中，copy 进去要生成 JavaBean 的 GSON 数据，之后一步步 next，其中可以修改类名和权限。然后，生成 JavaBean
+
+##### 3. 加入 NewsMenuPageViewPage 的滑动冲突解决
+先注释 NewsMenuPageViewPage 中的如下代码，
+```java
+        // 本质上是想去让 slidingmenu 在第0个 page 上，可以滑动，在第0个之外，不能滑动
+
+        // 父控件都会给到子控件来处理
+        // 虽想处理，但只有从第1个之后才处理
+        int currentItem = getCurrentItem();
+        if(currentItem!=0) {
+            getParent().requestDisallowInterceptTouchEvent(true);
+        } else {
+            // 第0个其实不想处理
+            getParent().requestDisallowInterceptTouchEvent(false);
+        }
+```
+因为其中的`getParent().requestDisallowInterceptTouchEvent(true);`，已把事件拦截过去，所以它下层的 NewsMenuPageViewPage 中的`getParent().requestDisallowInterceptTouchEvent(true);`此代码失效。
+
+所以，解决 SlidingMenu 和 NewsMenuPage 中的 NewsMenuPageViewPage 的滑动冲突，如下，
+```java
+        vp_newsmenupage_content.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
+            @Override
+            public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
+                HomeActivity homeActivity = (HomeActivity) mActivity;
+                LogUtil.i(TAG,"position = " + position);
+                if(position==0) {
+                    // 侧边栏可以滑动，enbale
+                    homeActivity.setSlidingmenuEnable(true);
+                } else {
+                    // 侧边栏不可以滑动，disable
+                    homeActivity.setSlidingmenuEnable(false);
+                }
+            }
+
+            @Override
+            public void onPageSelected(int position) {
+
+            }
+
+            @Override
+            public void onPageScrollStateChanged(int state) {
+
+            }
+        });
+```
+先判断，究竟在哪个 page 上，其次，使用`homeActivity.setSlidingmenuEnable(true);`,控制其侧边栏能否滑出
+
+##### 4. NoScrollViewPager 的冲突问题解决
+冲突状态如下图：
+
+![冲突状态图](http://wx4.sinaimg.cn/mw690/89195e42gy1fpb9t3n3xij20gk0e2mya.jpg)
+
+在 NoScrollViewPager 中的 onInterceptTouchEvent 方法，会触发 event.move 滑动事件，
+```java
+    // 判断要不要拦截
+    /*
+     * This method JUST determines whether we want to intercept the motion.
+     * If we return true, onMotionEvent will be called and we do the actual scrolling there.
+     */
+    // 直接在 onInterceptTouchEvent 中，返回 false，无需在里面进行判断。否则它会调用里面的滑动，导致问题
+    @Override
+    public boolean onInterceptTouchEvent(MotionEvent ev) {
+        Log.i(TAG,"onInterceptTouchEvent");
+        return false;//super.onInterceptTouchEvent(ev);
+    }
+```
+改为：`return false;//super.onInterceptTouchEvent(ev);`，其实主谋是`super.onInterceptTouchEvent(ev)`，为父类中的方法
+
+##### 5. NewsDetailPage 中的 TopNewsViewPager 的布局填写
+首先，在 NewsDetailPage 的布局文件中，加入 listview，
+```java
+    <ListView
+        android:id="@+id/lv_newsdetailpage_newslist"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"></ListView>
+```
+然后，写好 TopNewsViewPager 的布局，
+```java
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="200dp">
+
+    <com.example.jession_ding.newsapplication.view.TopNewsViewPager
+        android:id="@+id/vp_newsdetail_topnews"
+        android:layout_width="match_parent"
+        android:layout_height="200dp">
+    </com.example.jession_ding.newsapplication.view.TopNewsViewPager>
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:background="#44000000">
+
+        <TextView
+            android:id="@+id/tv_newsdetail_topnewsTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:paddingLeft="10dp"
+            android:textSize="15sp"/>
+
+        <com.viewpagerindicator.CirclePageIndicator
+            android:id="@+id/indicator_topnews"
+            app:fillColor="#FFFF0000"
+            app:pageColor="#FF000000"
+            app:radius="5dp"
+            app:strokeColor="#FF000000"
+            app:strokeWidth="1dp"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:padding="10dip"
+            />
+    </RelativeLayout>
+</RelativeLayout>
+```
+其上面的布局包含了 TopNewsViewPager，还包含了 CirclePageIndicator，
+```
+app:fillColor="#FFFF0000"   移动的小圆颜色
+app:pageColor="#FF000000"   静止的小圆颜色
+app:strokeColor="#FF000000" 圆环的填充色
+app:strokeWidth="1dp"       圆环的宽度
+app:radius="5dp"            圆的半径
+```
+之后，填充并加入到 listview 中去，
+```java
+View view = View.inflate(mActivity, R.layout.newsdetailpage, null);
+lv_newsdetailpage_newslist = view.findViewById(R.id.lv_newsdetailpage_newslist);
+
+listHeader = View.inflate(mActivity, R.layout.item_listview_header, null);
+
+vp_newsdetail_topnews = listHeader.findViewById(R.id.vp_newsdetail_topnews);
+tv_newsdetail_topnewsTitle = listHeader.findViewById(R.id.tv_newsdetail_topnewsTitle);
+indicator_topnews = listHeader.findViewById(R.id.indicator_topnews);
+
+// 把整个 headerview 放到 listview 最前面
+lv_newsdetailpage_newslist.addHeaderView(listHeader);
+```
+
+##### 6. 向上滑动 TopNewsViewPager 不滚动问题
+因为 TopNewsViewPager 加入到 listView 中，所以上下拖动 TopNewsViewPager，可以使其滚动。但是，有时候产生的事件（分上下滑动和左右滑动），左右滑动会被 TopNewsViewPager 本身消耗掉，而不能传递给外层的 listview 消耗，所以导致不能滑动。
+
+解决办法：先判断是上下滑动还是左右滑动，然后调用`getParent().requestDisallowInterceptTouchEvent(false);`方法，
+```java
+switch (ev.getAction()) {
+            case MotionEvent.ACTION_DOWN:
+                startX = ev.getRawX();
+                startY = ev.getRawY();
+                break;
+            case MotionEvent.ACTION_MOVE:
+                endX = ev.getRawX();
+                endY = ev.getRawY();
+
+                float dX = Math.abs(endX - startX);
+                float dY = Math.abs(endY - startY);
+                if (dX > dY) { // 水平方向
+                    if (endX - startX > 0) {// 右滑
+                        // 在最后一个 page 上，需要请求父控件不要拦截，自己去处理
+                        if (getCurrentItem() != 0) {// 最后一个 page，page 总数去减1 getChildCount() = 3
+                            HomeActivity homeActivity = (HomeActivity) mActivity;
+                            homeActivity.setSlidingmenuEnable(false);
+                            getParent().requestDisallowInterceptTouchEvent(true);
+                        }
+                    } else {// 左滑
+         /*               if (getCurrentItem() == 0) {
+                            getParent().requestDisallowInterceptTouchEvent(true);
+                        }*/
+                    }
+                } else {    //竖直方向
+                    getParent().requestDisallowInterceptTouchEvent(false);
+                }
+                break;
+```
+
+##### 7. 两个问题
+```
+1. 在 TopNewsViewPager 中，除第一个 page 之外，其他 page 快速右滑，slidingmenu 左侧栏有时会出来的问题
+
+猜想可能：右滑太快，TopNewsViewPager 没有捕捉到并处理该事件，被外层的 NoScrollViewPager 捕捉并处理了
+
+HomeActivity homeActivity = (HomeActivity) mActivity;
+homeActivity.setSlidingmenuEnable(false);
+
+2. (NoScrollViewPager 的第一个 page)在 TopNewsViewPager 中，除第一个 page 之外，向右滑动到其他的 page 上时，然后在下面的 listview 中向右滑动，滑第一次时，slidingmenu 没反应，事件被禁用掉了。滑第二次才能拖出 slidingmenu
+
+猜想可能：系统默认此次滑动是在 TopNewsViewPager 上，而不是在 NoScrollViewPager 上
+```
+
+### Part Ⅴ
+
+##### 1.
+
+##### 2.
+
+##### 3.
+
+##### 4.
+
+
+### Part Ⅵ       Ⅶ    Ⅷ      Ⅸ
+
+##### 1.
+
+##### 2.
+
+##### 3.
+
+##### 4.

@@ -2,6 +2,8 @@
 
 > 新闻客户端
 
+[TOC]
+
 ### Part Ⅰ
 
 ##### 1. 开始打开 App 的动画效果
@@ -1086,7 +1088,351 @@ homeActivity.setSlidingmenuEnable(false);
 猜想可能：系统默认此次滑动是在 TopNewsViewPager 上，而不是在 NoScrollViewPager 上
 ```
 
+##### 8. 滑动冲突图示
+
+![滑动冲突图示](http://wx1.sinaimg.cn/mw690/89195e42gy1fpb9t47rf3j20oo0e0mxm.jpg)
+
 ### Part Ⅴ
+
+##### 1. ListView 的下拉刷新
+首先在 NewsDetailPage 的 initView() 方法中，先加入一个 header，为 ViewPager
+```java
+View view = View.inflate(mActivity, R.layout.newsdetailpage, null);
+lv_newsdetailpage_newslist = view.findViewById(R.id.lv_newsdetailpage_newslist);
+listHeader = View.inflate(mActivity, R.layout.item_listview_header, null);
+vp_newsdetail_topnews = listHeader.findViewById(R.id.vp_newsdetail_topnews);
+tv_newsdetail_topnewsTitle = listHeader.findViewById(R.id.tv_newsdetail_topnewsTitle);
+indicator_topnews = listHeader.findViewById(R.id.indicator_topnews);
+
+// 把整个 headerview 放到 listview 最前面
+lv_newsdetailpage_newslist.addHeaderView(listHeader);
+
+return view;
+```
+
+并在自定义的 listView 中 initHeaderView(Context context) 方法，加入 header，即下拉的刷新控件
+```java
+        refresh_header_view = View.inflate(context, R.layout.refresh_listview_header, null);
+        iv_refreshlistviewheader_img = refresh_header_view.findViewById(R.id.iv_refreshlistviewheader_img);
+        tv_refreshheader_hint = refresh_header_view.findViewById(R.id.tv_refreshheader_hint);
+        pb_refreshlistviewheader_freshing = refresh_header_view.findViewById(R.id.pb_refreshlistviewheader_freshing);
+        tv_refreshheader_lastupdate = refresh_header_view.findViewById(R.id.tv_refreshheader_lastupdate);
+        // 后加的在上面
+        addHeaderView(refresh_header_view);
+```
+
+###### 1.1 padding 的设置及显示
+一开始隐藏下拉控件，
+```java
+refresh_header_view.measure(0, 0);  // 先测算
+measuredHeight = refresh_header_view.getMeasuredHeight();   // 算出的高
+refresh_header_view.setPadding(0, -measuredHeight, 0, 0);   // int left, int top, int right, int bottom
+```
+
+三种状态 padding 的不同设置:
+
+1. 下滑中：`refresh_header_view.setPadding(0, (int) dY - measuredHeight, 0, 0);`
+2. 刷新中：`refresh_header_view.setPadding(0, 0, 0, 0);`
+3. 刷新完成或下拉一点点恢复原位：`refresh_header_view.setPadding(0, -measuredHeight, 0, 0);`
+
+###### 1.2 下拉刷新的事件冲突
+在 RefreshListView 中的 down 事件中，取不到`getRawX()`和`getRawY()`数据，这个事件被子控件 TopNewsViewPager 吃掉了，看 TopNewsViewPager 中的 move 事件的代码，
+```java
+else {    //竖直方向
+    getParent().requestDisallowInterceptTouchEvent(false);
+}
+```
+在子控件 TopNewsViewPager，滑动之后，才叫父控件 RefreshListView 去进行事件处理，为时已晚，所以接收不到 down 事件，但能接收到后续事件。
+
+处理：
+在 RefreshListView 中的`MotionEvent.ACTION_MOVE`，第一次进入时，若`startX`和`startY`不为0，则记录下:
+```java
+    // 下拉刷新的事件冲突
+    if (startX == 0) {
+        startX = ev.getRawX();
+    }
+    if (startY == 0) {
+        startY = ev.getRawY();
+    }
+```
+
+###### 1.3 下拉刷新的状态
+如图，有三种状态，使用状态机去编码操作，
+
+![三种状态](http://wx1.sinaimg.cn/mw690/89195e42gy1fpj9uiyel8j20jj0c60sv.jpg)
+
+初始状态，松手状态和正在刷新状态
+```java
+    private void updateHeaderView() {
+        switch (currentState) {
+            case NEED_RELEASE:
+                tv_refreshheader_hint.setText("松开手，就可以刷新了！");
+                iv_refreshlistviewheader_img.setAnimation(rotateAnimation);
+                rotateAnimation.start();
+                break;
+            case REFRESHING:
+                tv_refreshheader_hint.setText("正在刷新！");
+                // iv 没有消失
+                //rotateAnimation.cancel();
+                iv_refreshlistviewheader_img.clearAnimation();
+                iv_refreshlistviewheader_img.setVisibility(INVISIBLE);
+                pb_refreshlistviewheader_freshing.setVisibility(VISIBLE);
+
+                break;
+        }
+    }
+```
+在 `MotionEvent.ACTION_MOVE` 中，判断状态，
+```java
+            case MotionEvent.ACTION_MOVE:
+                // 刷新再次下拉问题
+                if (currentState == REFRESHING) {
+                    break;
+                }
+                // 下拉刷新的事件冲突
+                if (startX == 0) {
+                    startX = ev.getRawX();
+                }
+                if (startY == 0) {
+                    startY = ev.getRawY();
+                }
+                LogUtil.i(TAG, "startX1 = " + startX + ";" + "startY1 = " + startY);
+                endX = ev.getRawX();
+                endY = ev.getRawY();
+                LogUtil.i(TAG, "endX = " + endX + ";" + "endY = " + endY);
+                float dX = Math.abs(startX - endX);
+                float dY = Math.abs(startY - endY);
+                LogUtil.i(TAG, "dX = " + dX + ";" + "dY = " + dY);
+                if (dX < dY) {  // 上下滑
+                    if (endY > startY) {    // 下滑
+                        LogUtil.i(TAG, "下滑");
+                        refresh_header_view.setPadding(0, (int) dY - measuredHeight, 0, 0);
+                        if ((int) dY - measuredHeight > 0 && currentState != NEED_RELEASE) {
+                            // 完全拉出来
+                            currentState = NEED_RELEASE;
+                            LogUtil.i(TAG, "状态变为需要松手！");
+                            updateHeaderView();
+                        }
+                    }
+                }
+
+                break;
+```
+
+在 `MotionEvent.ACTION_UP` 中，判断状态
+```java
+            case MotionEvent.ACTION_UP:
+                // 如果已经完全拉出来了，就让他刷新
+                if (currentState == NEED_RELEASE) {
+                    currentState = REFRESHING;
+                    LogUtil.i(TAG, "状态变为正在刷新！");
+                    refresh_header_view.setPadding(0, 0, 0, 0);
+
+                    // 刷新代码
+                    if (l != null) {
+                        l.onRefreshing();
+                    }
+                    updateHeaderView();
+                }
+                // 如果只拉出来一点点，就让他弹回去，恢复到原位(隐藏)
+                if (currentState == INIT_STATE) {
+                    LogUtil.i(TAG, "状态变为初始状态，回到原位！");
+                    refresh_header_view.setPadding(0, -measuredHeight, 0, 0);
+                }
+                break;
+```
+
+###### 1.4 下拉刷新的动画效果及问题
+设置一个绕自身顺时针旋转180的 ImageView 动画，
+```java
+rotateAnimation = new RotateAnimation(0, 180, Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
+rotateAnimation.setDuration(1000);
+rotateAnimation.setFillAfter(true); // 停在最后
+```
+
+在 updateHeaderView() 中，可以松手的时候设置动画，
+```java
+case NEED_RELEASE:
+    tv_refreshheader_hint.setText("松开手，就可以刷新了！");
+    iv_refreshlistviewheader_img.setAnimation(rotateAnimation);
+    rotateAnimation.start();
+    break;
+```
+在刷新的时候，取消动画，
+```java
+case REFRESHING:
+    tv_refreshheader_hint.setText("正在刷新！");
+    // iv 没有消失
+    //rotateAnimation.cancel();
+    iv_refreshlistviewheader_img.clearAnimation();
+    iv_refreshlistviewheader_img.setVisibility(INVISIBLE);
+    pb_refreshlistviewheader_freshing.setVisibility(VISIBLE);
+
+    break;
+```
+
+问题：
+ProgressBar 在 FrameLayout 中，设置`pb_refreshlistviewheader_freshing.setVisibility(VISIBLE);`，无效果。两者控件有冲突
+
+###### 1.5 下拉刷新失败的情况
+```java
+            @Override
+public void onFailure(com.lidroid.xutils.exception.HttpException e, String s) {
+    LogUtil.d(TAG, "onFailure = " + s + "; e = " + e.getExceptionCode() + ";" + e.getMessage());
+    lv_newsdetailpage_newslist.onRefreshComplete();
+    Toast.makeText(mActivity, "加载失败，请稍后再试！", Toast.LENGTH_SHORT).show();
+}
+```
+置位，弹提示，完成：
+```java
+    public void onRefreshComplete() {
+        currentState = INIT_STATE;
+        Log.i(TAG, "状态变为初始状态，回到原位！");
+        refresh_header_view.setPadding(0, -measuredHeight, 0, 0);
+        tv_refreshheader_hint.setText("请继续下拉刷新");
+        pb_refreshlistviewheader_freshing.setVisibility(INVISIBLE);
+        iv_refreshlistviewheader_img.setVisibility(VISIBLE);
+        tv_refreshheader_lastupdate.setText(new Date().toLocaleString());
+    }
+```
+
+##### 2. 上滑自动加载
+在 RefreshListView 中，增加 footer
+```java
+    private void initFooterView(Context context) {
+        refresh_footer_view = View.inflate(context, R.layout.refresh_listview_footer, null);
+        refresh_footer_view.measure(0,0);
+        int measuredHeight = refresh_footer_view.getMeasuredHeight();
+        refresh_footer_view.setPadding(0,0,0,-measuredHeight);
+        addFooterView(refresh_footer_view);
+        setOnScrollListener(new OnScrollListener() {
+            @Override
+            public void onScrollStateChanged(AbsListView view, int scrollState) {
+                // 滑到末尾
+                LogUtil.i(TAG,"scrollState = " + scrollState + ";" + "getLastVisiblePosition() = " + getLastVisiblePosition() + ";"
+                        + "getCount()-1 = " + (getCount()-1));
+                if((scrollState==SCROLL_STATE_IDLE||scrollState==SCROLL_STATE_FLING)&&
+                        getLastVisiblePosition()==getCount()-1) {
+                    refresh_footer_view.setPadding(0,0,0,0);
+                    // 使 ProgressBar 弹出
+                    setSelection(getCount()-1);
+                    // 去加载更多，去执行加载并更新代码
+                    if(l!=null) {
+                        l.onLoadMore();
+                    }
+                }
+            }
+
+            @Override
+            public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
+
+            }
+        });
+    }
+```
+去加载更多，
+```java
+    @Override
+public void onLoadMore() {
+    String more = newsDetail.getData().getMore();
+    if (!more.isEmpty()) {
+        String moreUrl = Constants.TEST_ENGINE + "/zhbj" + more;
+        LogUtil.i(TAG, "moreUrl = " + moreUrl);
+        HttpUtils httpUtils = new HttpUtils();
+        httpUtils.send(HttpRequest.HttpMethod.GET, moreUrl, new RequestCallBack<String>() {
+            @Override
+        public void onSuccess(ResponseInfo<String> responseInfo) {
+            LogUtil.i(TAG, "loadmore data = " + responseInfo.result);
+            Gson gson = new Gson();
+            newsDetail =   gson.fromJson(responseInfo.result, NewsDetail.class);
+            List<NewsDetail.DataBean.NewsBean> news = newsDetail.getData().getNews();
+            listDataSet.addAll(news);
+            // ListView 刷新一下
+            myNewsListAdapter.notifyDataSetChanged();
+            lv_newsdetailpage_newslist.onLoadMoreComplete();
+        }
+
+            @Override
+        public void onFailure(com.lidroid.xutils.exception.HttpException e, String s) {
+            Toast.makeText(mActivity, "加载失败，请稍后再试！", Toast.LENGTH_SHORT).show();
+            lv_newsdetailpage_newslist.onLoadMoreComplete();
+                }
+                    });
+        } else {
+            Toast.makeText(mActivity, "没有更多数据了，休息一会儿", Toast.LENGTH_SHORT).show();
+            lv_newsdetailpage_newslist.onLoadMoreComplete();
+                }
+            }
+```
+先解析数据，
+```java
+Gson gson = new Gson();
+newsDetail =   gson.fromJson(responseInfo.result, NewsDetail.class);
+List<NewsDetail.DataBean.NewsBean> news = ewsDetail.getData().getNews();
+```
+放入到 listDataSet 中去，
+```java
+listDataSet.addAll(news);
+```
+然后刷新下 listView，
+```java
+// ListView 刷新一下
+myNewsListAdapter.notifyDataSetChanged();
+```
+最后，调用加载完成
+```java
+lv_newsdetailpage_newslist.onLoadMoreComplete();
+```
+
+##### 3. 监听事件的设置
+
+在 NewsDetailPage 中，填充包含 RefreshListView 的布局。在自定义的 RefreshListView 中，有一些滑动操作，需要调用一些方法，这些方法在 NewsDetailPage 中，能更好的用代码编写功能
+
+在 RefreshListView 中，写接口，
+```java
+    public interface MyRefreshListener {
+        void onRefreshing();
+
+        void onLoadMore();
+    }
+```
+并设置接口的引用，
+```java
+public MyRefreshListener l;
+
+public void setMyRefreshListener(MyRefreshListener l) {
+    this.l = l;
+}
+```
+
+在 NewsDetailPage 中，实现接口的监听操作，
+```java
+lv_newsdetailpage_newslist.setMyRefreshListener(new RefreshListView.MyRefreshListener() {}
+```
+并重写了`public void onRefreshing() {}`和`public void onLoadMore() {}`方法
+
+最后，在 RefreshListView 中的`case MotionEvent.ACTION_UP:`和`private void initFooterView(Context context) {}`中，分别调用
+
+##### 4. WebView 的使用
+先在 ShowNewsActivity 的布局文件`activity_show_news`中，加入：
+```java
+    <WebView
+        android:id="@+id/wv_shownewsactivity_content"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"></WebView>
+```
+然后，在 ShowNewsActivity 中，
+```java
+        Intent intent = getIntent();
+        String url = intent.getStringExtra("url");
+        WebView wv_shownewsactivity_content = (WebView) findViewById(R.id.wv_shownewsactivity_content);
+        if(!url.isEmpty()) {
+            wv_shownewsactivity_content.loadUrl(url);
+        }
+```
+加载 html 链接
+
+### Part Ⅵ
 
 ##### 1.
 
@@ -1096,8 +1442,17 @@ homeActivity.setSlidingmenuEnable(false);
 
 ##### 4.
 
+### Part Ⅶ
 
-### Part Ⅵ       Ⅶ    Ⅷ      Ⅸ
+##### 1.
+
+##### 2.
+
+##### 3.
+
+##### 4.
+
+### Part Ⅷ
 
 ##### 1.
 

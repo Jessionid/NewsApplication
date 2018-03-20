@@ -92,9 +92,9 @@ public class TopNewsViewPager extends ViewPager {
                             getParent().requestDisallowInterceptTouchEvent(true);
                         }
                     } else {// 左滑
-         /*               if (getCurrentItem() == 0) {
+                        if (getCurrentItem() == 0) {
                             getParent().requestDisallowInterceptTouchEvent(true);
-                        }*/
+                        }
                     }
                 } else {    //竖直方向
                     getParent().requestDisallowInterceptTouchEvent(false);

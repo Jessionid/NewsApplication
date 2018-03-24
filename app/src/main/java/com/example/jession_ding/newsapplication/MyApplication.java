@@ -2,6 +2,8 @@ package com.example.jession_ding.newsapplication;
 
 import android.app.Application;
 
+import com.mob.MobSDK;
+
 import org.xutils.x;
 
 /**
@@ -14,6 +16,7 @@ public class MyApplication extends Application{
     @Override
     public void onCreate() {
         super.onCreate();
+        MobSDK.init(this);
         x.Ext.init(this);
         x.Ext.setDebug(false); // 是否输出debug日志, 开启debug会影响性能.
     }

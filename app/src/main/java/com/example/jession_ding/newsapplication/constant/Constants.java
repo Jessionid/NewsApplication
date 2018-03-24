@@ -17,4 +17,6 @@ public interface Constants {
     // 新闻列表
     String newsList = TEST_ENGINE + "/zhbj/categories.json";
 
+    // 组图列表
+    String pictureList = TEST_ENGINE + "/zhbj/photos/photos_1.json";
 }

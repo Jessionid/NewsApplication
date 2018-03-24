@@ -1434,13 +1434,302 @@ lv_newsdetailpage_newslist.setMyRefreshListener(new RefreshListView.MyRefreshLis
 
 ### Part Ⅵ
 
-##### 1.
+##### 1. 新闻内容设置
 
-##### 2.
+##### 1.1 字体大小设置
+使用`WebView`的`getSettings()`方法中的`setTextZoom()`方法，调节字体大小，
+```java
+settings.setTextZoom(textSize[choice]);
+```
 
-##### 3.
+##### 1.2 字体属性保存
+使用`AlertDialog`选择字体，
+```java
+    int choice;
+    int[] textSize = new int[]{200, 150, 100, 75, 50};
 
-##### 4.
+    // 改变字体
+    private void changeSize() {
+        LogUtil.i(TAG, "changeSize");
+        String[] choices = new String[]{"超大号", "大号", "正常", "小号", "超小号"};
+        new AlertDialog.Builder(this)
+                .setTitle("修改字体")
+                .setSingleChoiceItems(choices, choice, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        choice = which;
+                    }
+                })
+                .setPositiveButton("确认", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        // SMALLEST(50), SMALLER(75), NORMAL(100), LARGER(150), LARGEST(200);
+                        // settings.setTextSize(WebSettings.TextSize.LARGEST);
+                        SharedPreferences.Editor edit = sp.edit();
+                        edit.putInt("textsize", choice);
+                        edit.commit();
+                        settings.setTextZoom(textSize[choice]);
+
+                    }
+                })
+                .setNegativeButton("取消", null)
+                .show();
+    }
+```
+并保存到`SharedPreferences`中去，
+```java
+                        // SMALLEST(50), SMALLER(75), NORMAL(100), LARGER(150), LARGEST(200);
+                        // settings.setTextSize(WebSettings.TextSize.LARGEST);
+                        SharedPreferences.Editor edit = sp.edit();
+                        edit.putInt("textsize", choice);
+                        edit.commit();
+```
+一开始进来取`SharedPreferences`中存在的值，否则拿里面的缺省值
+```java
+sp = getSharedPreferences("config", MODE_PRIVATE);
+choice = sp.getInt("textsize", 2);
+settings.setTextZoom(textSize[choice]);
+```
+最后，网页加载完成后，`ProgressBar`消失：
+```java
+            wv_shownewsactivity_content.setWebViewClient(new WebViewClient() {
+                @Override
+                public void onPageStarted(WebView view, String url, Bitmap favicon) {
+                    super.onPageStarted(view, url, favicon);
+                }
+
+                // 页面加载完毕
+                @Override
+                public void onPageFinished(WebView view, String url) {
+                    // super.onPageFinished(view, url);
+                    // 隐藏且不占地方
+                    pb_shownewsactivity_loading.setVisibility(View.GONE);
+                }
+            });
+```
+
+##### 2. 第三方社会化分享(使用 mob)
+
+首先，在`AndroidManifest`中的`application`标签中，加入：
+```java
+tools:replace="android:name"
+```
+其次，在`Application`类中，初始化 mob(没有的，自己创建 MyApplication，继承系统的 Application 类)
+```java
+MobSDK.init(this);
+```
+接着，在项目根目录的`build.gradle`中的`buildscript`标签里的`repositories`中，加入：
+```java
+maven {
+    url "http://mvn.mob.com/android"
+}
+```
+紧接着，在项目根目录的`build.gradle`中的`dependencies`依赖模块中，加入：
+```java
+classpath 'com.mob.sdk:MobSDK:+'
+```
+最后，在你要使用的 module 下的`build.gradle`中的，加入：
+```java
+apply plugin: 'com.mob.sdk'
+```
+然后，再加入：
+```java
+MobSDK {
+    appKey "24c3a269537ea"
+    appSecret "0136d3b0132356971520d07e7f2f5818"
+
+    ShareSDK {
+        //平台配置信息
+        // 不需要添加 OnekeyShare 库
+        // gui false
+        // 固定使用这个版本
+        // version "v3.1.3"
+        devInfo {
+            SinaWeibo {
+                appKey "568898243"
+                appSecret "38a4f8204cc784f81f9f0daaf31e02e3"
+                callbackUri "http://www.sharesdk.cn"
+                shareByAppClient false
+            }
+            Wechat {
+                appId "wx4868b35061f87885"
+                appSecret "64020361b8ec4c99936c0e3999a9f249"
+            }
+            QQ {
+                appId "100371282"
+                appKey "aed9b0303e3ed1e27bae87c33761161d"
+            }
+/*            Facebook {
+                appKey "1412473428822331"
+                appSecret "a42f4f3f867dc947b9ed6020c2e93558"
+                callbackUri "https://mob.com"
+            }*/
+        }
+    }
+
+}
+```
+`appKey`和`appSecret`是 mob 平台申请得来的，下面`devInfo`标签下的各个分享平台，可以自行添加或注释掉，或者调整上下来改变他们图标显示的前后位置。
+
+Android 社会化分享文档：
+
+http://wiki.mob.com/sdk-share-android-3-0-0/
+
+mob 去自定义 UI：
+
+http://wiki.mob.com/%e8%87%aa%e5%ae%9a%e4%b9%89uisharesdk-android/
+
+##### 3. 组图的不同格式切换
+
+点击左侧栏中`ListView`中的组图，在主页面中，进行数据的填充操作。`PictureMenuPage`类中的`initView()`方法：
+```java
+    @Override
+    public View initView() {
+/*        TextView textView = new TextView(mActivity);
+        textView.setText(menuDataInfo.title);
+        textView.setGravity(Gravity.CENTER);
+        textView.setTextSize(30);
+        textView.setTextColor(Color.GRAY);*/
+        View view = View.inflate(mActivity, R.layout.picture_menu_page,null);
+        lv_piaturemenupage_content = view.findViewById(R.id.lv_piaturemenupage_content);
+        gv_piaturemenupage_content = view.findViewById(R.id.gv_piaturemenupage_content);
+        return view;
+    }
+```
+从网络中，获取数据并解析，
+```java
+    @Override
+    public void initData() {
+        // http://localhost:8080/zhbj/photos/photos_1.json
+        HttpUtils httpUtils = new HttpUtils();
+        httpUtils.send(HttpRequest.HttpMethod.GET, Constants.pictureList,
+                new RequestCallBack<String>() {
+                    @Override
+                    public void onSuccess(ResponseInfo<String> responseInfo) {
+                        Log.i(TAG,"responseInfo = " + responseInfo.result);
+                        parseJosn( responseInfo.result);
+                    }
+
+                    @Override
+                    public void onFailure(HttpException e, String s) {
+                        Toast.makeText(mActivity, "加载失败，请稍后再试！", Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
+
+    private void parseJosn(String result) {
+        Gson gson = new Gson();
+        pictureNews = gson.fromJson(result, PictureNews.class);
+        MyPictureListAdapter myPictureListAdapter = new MyPictureListAdapter();
+        lv_piaturemenupage_content.setAdapter(myPictureListAdapter);
+        gv_piaturemenupage_content.setAdapter(myPictureListAdapter);
+    }
+```
+获取完数据，并设置`setAdapter`，在填充的`xml`中，
+```java
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+             android:layout_width="match_parent"
+             android:layout_height="match_parent">
+
+    <ListView
+        android:id="@+id/lv_piaturemenupage_content"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+    </ListView>
+
+    <GridView
+        android:id="@+id/gv_piaturemenupage_content"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:numColumns="2"
+        android:visibility="gone">
+    </GridView>
+</FrameLayout>
+```
+`MyPictureListAdapter`类：
+```java
+    class MyPictureListAdapter extends BaseAdapter {
+        BitmapUtils bitmapUtils;
+
+        public MyPictureListAdapter() {
+            bitmapUtils = new BitmapUtils(mActivity);
+        }
+
+        @Override
+        public int getCount() {
+            return pictureNews.data.news.size();
+        }
+
+        @Override
+        public Object getItem(int position) {
+            return null;
+        }
+
+        @Override
+        public long getItemId(int position) {
+            return 0;
+        }
+
+        @Override
+        public View getView(int position, View convertView, ViewGroup parent) {
+            PictureNews.DataBean.NewsBean newsBean = pictureNews.data.news.get(position);
+            String title = newsBean.title;
+            String listimage = new DetachingString(newsBean.listimage).detaching();
+            View view = View.inflate(mActivity, R.layout.item_listview_picturenews, null);
+            ImageView iv_listviewpicturenews_img = view.findViewById(R.id.iv_listviewpicturenews_img);
+            TextView tv_listviewpicturenews_title = view.findViewById(R.id.tv_listviewpicturenews_title);
+            tv_listviewpicturenews_title.setText(title);
+            bitmapUtils.display(iv_listviewpicturenews_img,listimage);
+            return view;
+        }
+    }
+```
+`ListView`和`GridView`可以设置同一个`BaseAdapter`()，
+```java
+MyPictureListAdapter myPictureListAdapter = new MyPictureListAdapter();
+lv_piaturemenupage_content.setAdapter(myPictureListAdapter);
+gv_piaturemenupage_content.setAdapter(myPictureListAdapter);
+```
+在点击组图，填充数据时，显示右边的 button，
+```java
+public void changeNewsPageContent(int position) {
+    ll_pageview_content.removeAllViews();
+    BaseMenuPage baseMenuPage = newsMenuPage.get(position);
+    if(position==2) {
+        ib_pageview_rightbutton.setVisibility(View.VISIBLE);
+    } else{
+        ib_pageview_rightbutton.setVisibility(View.INVISIBLE);
+    }
+    // 父类调用子类重写的方法
+    baseMenuPage.initData();
+    ll_pageview_content.addView(baseMenuPage.mMenuPageView);
+}
+```
+然后，点击切换组图格式，
+```java
+ib_pageview_rightbutton.setOnClickListener(new View.OnClickListener() {
+    @Override
+    public void onClick(View v) {
+        //Toast.makeText(mActivity, "ib_pageview_rightbutton", Toast.LENGTH_SHORT).show();
+        pictureMenuPage.changeUI();
+    }
+});
+```
+```java
+boolean flag = true;
+public void changeUI() {
+    if(flag) {
+        gv_piaturemenupage_content.setVisibility(View.VISIBLE);
+        lv_piaturemenupage_content.setVisibility(View.INVISIBLE);
+        flag = false;
+    } else{
+        lv_piaturemenupage_content.setVisibility(View.VISIBLE);
+        gv_piaturemenupage_content.setVisibility(View.INVISIBLE);
+        flag = true;
+    }
+}
+```
 
 ### Part Ⅶ
 

@@ -38,6 +38,8 @@ import java.util.List;
 public class NewsPage extends BasePage {
     private static final String TAG = "NewsPage";
     List<BaseMenuPage> newsMenuPage;
+    private PictureMenuPage pictureMenuPage;
+
     public NewsPage(Activity mActivity) {
         super(mActivity);
     }
@@ -52,19 +54,13 @@ public class NewsPage extends BasePage {
         ll_pageview_content.addView(textView);
 
         ib_pageview_leftbutton.setVisibility(View.VISIBLE);
-        ib_pageview_rightbutton.setVisibility(View.VISIBLE);
+        // ib_pageview_rightbutton.setVisibility(View.VISIBLE);
 
         ib_pageview_leftbutton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 //Toast.makeText(mActivity, "ib_pageview_leftbutton", Toast.LENGTH_SHORT).show();
                 homeActivity.setSlidingMenuToggle();
-            }
-        });
-        ib_pageview_rightbutton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                //Toast.makeText(mActivity, "ib_pageview_rightbutton", Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -134,9 +130,19 @@ public class NewsPage extends BasePage {
             textView.setTextColor(Color.RED);
             newsMenuPage.add(textView);
         }*/
+        pictureMenuPage = new PictureMenuPage(mActivity, categories.data.get(2));
         newsMenuPage.add(new NewsMenuPage(mActivity,categories.data.get(0)));
         newsMenuPage.add(new TopicMenuPage(mActivity,categories.data.get(1)));
-        newsMenuPage.add(new PictureMenuPage(mActivity,categories.data.get(2)));
+        newsMenuPage.add(pictureMenuPage);
+
+        ib_pageview_rightbutton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //Toast.makeText(mActivity, "ib_pageview_rightbutton", Toast.LENGTH_SHORT).show();
+                pictureMenuPage.changeUI();
+            }
+        });
+
         newsMenuPage.add(new InteractMenuPage(mActivity,categories.data.get(3)));
 
         // 默认显示 listView 的第一个 item
@@ -184,6 +190,11 @@ public class NewsPage extends BasePage {
     public void changeNewsPageContent(int position) {
         ll_pageview_content.removeAllViews();
         BaseMenuPage baseMenuPage = newsMenuPage.get(position);
+        if(position==2) {
+            ib_pageview_rightbutton.setVisibility(View.VISIBLE);
+        } else{
+            ib_pageview_rightbutton.setVisibility(View.INVISIBLE);
+        }
         // 父类调用子类重写的方法
         baseMenuPage.initData();
         ll_pageview_content.addView(baseMenuPage.mMenuPageView);

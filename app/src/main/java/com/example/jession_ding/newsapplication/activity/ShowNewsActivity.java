@@ -15,7 +15,7 @@ import android.widget.ImageButton;
 import android.widget.ProgressBar;
 
 import com.example.jession_ding.newsapplication.R;
-import com.example.jession_ding.newsapplication.util.LogUtil;
+import com.example.jession_ding.newsapplication.utils.LogUtil;
 
 import cn.sharesdk.onekeyshare.OnekeyShare;
 

@@ -10,7 +10,7 @@ import com.example.jession_ding.newsapplication.R;
 import com.example.jession_ding.newsapplication.activity.HomeActivity;
 import com.example.jession_ding.newsapplication.bean.Categories;
 import com.example.jession_ding.newsapplication.newsdetailmenupage.NewsDetailPage;
-import com.example.jession_ding.newsapplication.util.LogUtil;
+import com.example.jession_ding.newsapplication.utils.LogUtil;
 import com.example.jession_ding.newsapplication.view.NewsMenuPageViewPage;
 import com.viewpagerindicator.TabPageIndicator;
 

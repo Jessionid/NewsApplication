@@ -15,9 +15,10 @@ import com.example.jession_ding.newsapplication.R;
 import com.example.jession_ding.newsapplication.bean.Categories;
 import com.example.jession_ding.newsapplication.bean.PictureNews;
 import com.example.jession_ding.newsapplication.constant.Constants;
-import com.example.jession_ding.newsapplication.util.DetachingString;
+import com.example.jession_ding.newsapplication.utils.DetachingString;
+import com.example.jession_ding.newsapplication.utils.MyBitmapUtils;
+import com.example.jession_ding.newsapplication.utils.SharedPrefUtil;
 import com.google.gson.Gson;
-import com.lidroid.xutils.BitmapUtils;
 import com.lidroid.xutils.HttpUtils;
 import com.lidroid.xutils.exception.HttpException;
 import com.lidroid.xutils.http.ResponseInfo;
@@ -57,12 +58,23 @@ public class PictureMenuPage extends BaseMenuPage{
     @Override
     public void initData() {
         // http://localhost:8080/zhbj/photos/photos_1.json
+        String jsonFromCache = SharedPrefUtil.getJsonFromCache(Constants.pictureList, mActivity);
+        if(jsonFromCache.isEmpty()) {
+            getDataFromServer();
+        } else{
+            parseJosn(jsonFromCache);
+        }
+    }
+
+    private void getDataFromServer() {
         HttpUtils httpUtils = new HttpUtils();
         httpUtils.send(HttpRequest.HttpMethod.GET, Constants.pictureList,
                 new RequestCallBack<String>() {
                     @Override
                     public void onSuccess(ResponseInfo<String> responseInfo) {
                         Log.i(TAG,"responseInfo = " + responseInfo.result);
+                        SharedPrefUtil.saveJsonToCache(Constants.pictureList,responseInfo.result,mActivity);
+
                         parseJosn( responseInfo.result);
                     }
 
@@ -93,10 +105,10 @@ public class PictureMenuPage extends BaseMenuPage{
         }
     }
     class MyPictureListAdapter extends BaseAdapter {
-        BitmapUtils bitmapUtils;
+        MyBitmapUtils myBitmapUtils;
 
         public MyPictureListAdapter() {
-            bitmapUtils = new BitmapUtils(mActivity);
+            myBitmapUtils = new MyBitmapUtils(mActivity);
         }
 
         @Override
@@ -123,7 +135,7 @@ public class PictureMenuPage extends BaseMenuPage{
             ImageView iv_listviewpicturenews_img = view.findViewById(R.id.iv_listviewpicturenews_img);
             TextView tv_listviewpicturenews_title = view.findViewById(R.id.tv_listviewpicturenews_title);
             tv_listviewpicturenews_title.setText(title);
-            bitmapUtils.display(iv_listviewpicturenews_img,listimage);
+            myBitmapUtils.display(iv_listviewpicturenews_img,listimage);
             return view;
         }
     }

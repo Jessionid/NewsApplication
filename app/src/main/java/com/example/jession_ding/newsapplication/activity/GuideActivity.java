@@ -1,6 +1,7 @@
 package com.example.jession_ding.newsapplication.activity;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
@@ -13,7 +14,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 
 import com.example.jession_ding.newsapplication.R;
-import com.example.jession_ding.newsapplication.util.LogUtil;
+import com.example.jession_ding.newsapplication.utils.LogUtil;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -91,6 +92,11 @@ public class GuideActivity extends AppCompatActivity {
                 LogUtil.i(TAG,"onPageScrollStateChanged==>>state = " + state);
             }
         });
+        // 如果显示了 guide，可以加入一个 flag 到 SP
+        SharedPreferences config = getSharedPreferences("config", MODE_PRIVATE);
+        SharedPreferences.Editor edit = config.edit();
+        edit.putBoolean("isShowGuide",true);
+        edit.commit();
     }
 
     private void initIndicator() {

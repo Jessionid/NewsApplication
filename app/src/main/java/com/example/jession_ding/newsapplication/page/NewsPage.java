@@ -14,7 +14,8 @@ import com.example.jession_ding.newsapplication.menupage.InteractMenuPage;
 import com.example.jession_ding.newsapplication.menupage.NewsMenuPage;
 import com.example.jession_ding.newsapplication.menupage.PictureMenuPage;
 import com.example.jession_ding.newsapplication.menupage.TopicMenuPage;
-import com.example.jession_ding.newsapplication.util.LogUtil;
+import com.example.jession_ding.newsapplication.utils.LogUtil;
+import com.example.jession_ding.newsapplication.utils.SharedPrefUtil;
 import com.google.gson.Gson;
 import com.lidroid.xutils.HttpUtils;
 import com.lidroid.xutils.http.ResponseInfo;
@@ -65,12 +66,29 @@ public class NewsPage extends BasePage {
         });
     }
 
+    public void getData() {
+        // 看看有没有缓存，如果有，则使用 cache 里的数据
+        String jsonFromCache = SharedPrefUtil.getJsonFromCache(Constants.newsList, mActivity);
+        if (jsonFromCache.isEmpty()) {
+            // 从服务器中拿数据
+            LogUtil.i(TAG,"从服务器中拿数据");
+            getDataFromServer1();
+        } else {    // 缓存不为空，则直接用缓存去解析 json
+            parseJsonString(jsonFromCache);
+            LogUtil.i(TAG,"缓存不为空：" + jsonFromCache);
+        }
+    }
+
     public void getDataFromServer1() {
         HttpUtils httpUtils = new HttpUtils();
         httpUtils.send(HttpRequest.HttpMethod.GET, Constants.newsList, new RequestCallBack<String>() {
             @Override
             public void onSuccess(ResponseInfo<String> responseInfo) {
                 LogUtil.d(TAG, "onSuccess = " + responseInfo.result);
+
+                // 应该把从服务器上拿到的 JsonString 缓存起来
+                SharedPrefUtil.saveJsonToCache(Constants.newsList, responseInfo.result, mActivity);
+
                 parseJsonString(responseInfo.result);
             }
 
@@ -85,7 +103,7 @@ public class NewsPage extends BasePage {
         // Gson
         Gson gson = new Gson();
         Categories categories = gson.fromJson(result, Categories.class);
-        LogUtil.i(TAG,categories.toString());
+        LogUtil.i(TAG, categories.toString());
         LeftMenuFragment leftMenuFragment = homeActivity.getLeftMenuFragment();
         leftMenuFragment.setMenuData(categories);
 
@@ -131,8 +149,8 @@ public class NewsPage extends BasePage {
             newsMenuPage.add(textView);
         }*/
         pictureMenuPage = new PictureMenuPage(mActivity, categories.data.get(2));
-        newsMenuPage.add(new NewsMenuPage(mActivity,categories.data.get(0)));
-        newsMenuPage.add(new TopicMenuPage(mActivity,categories.data.get(1)));
+        newsMenuPage.add(new NewsMenuPage(mActivity, categories.data.get(0)));
+        newsMenuPage.add(new TopicMenuPage(mActivity, categories.data.get(1)));
         newsMenuPage.add(pictureMenuPage);
 
         ib_pageview_rightbutton.setOnClickListener(new View.OnClickListener() {
@@ -143,10 +161,10 @@ public class NewsPage extends BasePage {
             }
         });
 
-        newsMenuPage.add(new InteractMenuPage(mActivity,categories.data.get(3)));
+        newsMenuPage.add(new InteractMenuPage(mActivity, categories.data.get(3)));
 
         // 默认显示 listView 的第一个 item
-        LogUtil.i(TAG,"categories.data.get(0) = " + categories.data.get(0).children.size());
+        LogUtil.i(TAG, "categories.data.get(0) = " + categories.data.get(0).children.size());
         changeNewsPageContent(0);
     }
 
@@ -158,7 +176,7 @@ public class NewsPage extends BasePage {
             @Override
             public void onSuccess(String result) {
                 LogUtil.d(TAG, "onSuccess = " + result.toString());
-                Toast.makeText(mActivity,result.toString(),Toast.LENGTH_SHORT).show();
+                Toast.makeText(mActivity, result.toString(), Toast.LENGTH_SHORT).show();
             }
 
             @Override
@@ -187,12 +205,13 @@ public class NewsPage extends BasePage {
         });
         //cancelable.cancel(); // 取消请求
     }
+
     public void changeNewsPageContent(int position) {
         ll_pageview_content.removeAllViews();
         BaseMenuPage baseMenuPage = newsMenuPage.get(position);
-        if(position==2) {
+        if (position == 2) {
             ib_pageview_rightbutton.setVisibility(View.VISIBLE);
-        } else{
+        } else {
             ib_pageview_rightbutton.setVisibility(View.INVISIBLE);
         }
         // 父类调用子类重写的方法

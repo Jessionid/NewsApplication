@@ -9,6 +9,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.RadioGroup;
+
 import com.example.jession_ding.newsapplication.R;
 import com.example.jession_ding.newsapplication.page.BasePage;
 import com.example.jession_ding.newsapplication.page.GovermentPage;
@@ -16,7 +17,8 @@ import com.example.jession_ding.newsapplication.page.HomePage;
 import com.example.jession_ding.newsapplication.page.NewsPage;
 import com.example.jession_ding.newsapplication.page.SettingPage;
 import com.example.jession_ding.newsapplication.page.SmartServicePage;
-import com.example.jession_ding.newsapplication.util.LogUtil;
+import com.example.jession_ding.newsapplication.utils.LogUtil;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -76,8 +78,9 @@ public class ContentFragment extends Fragment {
                         pageList.get(1).setSlidingMenuEnable(true);
                         // 新闻列表填充
                         NewsPage newsPage = (NewsPage) pageList.get(1);
+
+                        newsPage.getData();
                         //newsPage.getDataFromServer();
-                        newsPage.getDataFromServer1();
                         break;
                     case R.id.rb_contentfragment_smartservice:
                         vp_contentfragment_content.setCurrentItem(2, false);

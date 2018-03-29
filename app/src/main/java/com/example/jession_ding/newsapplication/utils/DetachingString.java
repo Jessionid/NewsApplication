@@ -1,4 +1,4 @@
-package com.example.jession_ding.newsapplication.util;
+package com.example.jession_ding.newsapplication.utils;
 
 import com.example.jession_ding.newsapplication.constant.Constants;
 

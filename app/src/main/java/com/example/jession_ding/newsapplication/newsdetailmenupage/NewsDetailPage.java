@@ -1,7 +1,10 @@
 package com.example.jession_ding.newsapplication.newsdetailmenupage;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.util.Log;
@@ -12,13 +15,15 @@ import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+
 import com.example.jession_ding.newsapplication.R;
 import com.example.jession_ding.newsapplication.activity.ShowNewsActivity;
 import com.example.jession_ding.newsapplication.bean.Categories;
 import com.example.jession_ding.newsapplication.bean.NewsDetail;
 import com.example.jession_ding.newsapplication.constant.Constants;
-import com.example.jession_ding.newsapplication.util.DetachingString;
-import com.example.jession_ding.newsapplication.util.LogUtil;
+import com.example.jession_ding.newsapplication.utils.DetachingString;
+import com.example.jession_ding.newsapplication.utils.LogUtil;
+import com.example.jession_ding.newsapplication.utils.SharedPrefUtil;
 import com.example.jession_ding.newsapplication.view.RefreshListView;
 import com.example.jession_ding.newsapplication.view.TopNewsViewPager;
 import com.google.gson.Gson;
@@ -28,10 +33,12 @@ import com.lidroid.xutils.http.ResponseInfo;
 import com.lidroid.xutils.http.callback.RequestCallBack;
 import com.lidroid.xutils.http.client.HttpRequest;
 import com.viewpagerindicator.CirclePageIndicator;
+
 import org.xutils.common.Callback;
 import org.xutils.ex.HttpException;
 import org.xutils.http.RequestParams;
 import org.xutils.x;
+
 import java.util.List;
 
 /**
@@ -43,6 +50,7 @@ import java.util.List;
 public class NewsDetailPage {
     private static final String TAG = "NewsDetailPage";
 
+    private SharedPreferences sp;
     public View mNewsDetailView;
     Activity mActivity;
     Categories.ChildrenInfo newsDetailInfo;
@@ -54,11 +62,13 @@ public class NewsDetailPage {
     private TopNewsViewPager vp_newsdetail_topnews;
     List<NewsDetail.DataBean.NewsBean> listDataSet;
     private MyNewsListAdapter myNewsListAdapter;
+    private List<Integer> readList;
 
     public NewsDetailPage(Activity mActivity, Categories.ChildrenInfo newsDetailInfo) {
         this.mActivity = mActivity;
         this.newsDetailInfo = newsDetailInfo;
-
+        this.sp = mActivity.getSharedPreferences("config", Context.MODE_PRIVATE);
+        // readList = new ArrayList<Integer>();
         mNewsDetailView = initView();
         initData();
     }
@@ -117,6 +127,30 @@ public class NewsDetailPage {
                     Intent intent = new Intent(mActivity,ShowNewsActivity.class);
                     intent.putExtra("url",url);
                     mActivity.startActivity(intent);
+
+                    // 在这里记录下用户看过的新闻，记录当前 news 的一个 id
+                    int newsId = newsBean.getId();
+
+                    // readList.add(id1);
+                    // 35311 35312 35313
+                    // String read = "";
+                    // 先拿出来，再加
+                    String readList = sp.getString("readList","");
+                    // 先看看是否已经记录过该 news 已读
+                    // 若已经保存过了，则无需做任何事情，反之，则保存到 sp 中
+                    boolean contains = readList.contains(newsId + "");
+                    if(!contains) {
+                        readList = readList + newsId + ",";
+                        SharedPreferences.Editor edit = sp.edit();
+                        edit.putString("readList",readList);
+                        edit.commit();
+                        // 方法一
+                        // myNewsListAdapter.notifyDataSetChanged();
+                        // 方法二
+                        // 只是想修改下当前点击的 item 的 textView 的颜色
+                        TextView tv_listviewnewsdetail_title = view.findViewById(R.id.tv_listviewnewsdetail_title);
+                        tv_listviewnewsdetail_title.setTextColor(Color.GRAY);
+                    }
                 }
             }
         });
@@ -135,10 +169,19 @@ public class NewsDetailPage {
         // http://localhost:8080/zhbj/10007/list_1.json
         String url = Constants.TEST_ENGINE + "/zhbj" + newsDetailInfo.url;
         LogUtil.i(TAG, "url = " + url);
-        getDataFromServer1(url);
+        String jsonFromCache = SharedPrefUtil.getJsonFromCache(url, mActivity);
+        if(jsonFromCache.isEmpty()) {
+            LogUtil.i(TAG, "缓存为空，去网络获取");
+            getDataFromServer1(url);
+        } else{
+            LogUtil.i(TAG, "直接使用缓存");
+            parseJsonString(jsonFromCache);
+            // 刷新完成
+            lv_newsdetailpage_newslist.onRefreshComplete();
+        }
     }
 
-    public void getDataFromServer1(String url) {
+    public void getDataFromServer1(final String url) {
         HttpUtils httpUtils = new HttpUtils();
         httpUtils.send(HttpRequest.HttpMethod.GET, url, new RequestCallBack<String>() {
             @Override
@@ -146,6 +189,9 @@ public class NewsDetailPage {
                 // 刷新完成
                 lv_newsdetailpage_newslist.onRefreshComplete();
                 LogUtil.d(TAG, "onSuccess = " + responseInfo.result);
+                // 保存
+                SharedPrefUtil.saveJsonToCache(url,responseInfo.result,mActivity);
+
                 parseJsonString(responseInfo.result);
             }
 
@@ -300,6 +346,18 @@ public class NewsDetailPage {
             bitmapUtils.display(iv_listviewnewsdetail_img, detachingUrl);
             tv_listviewnewsdetail_title.setText(listDataSet.get(position).getTitle());
             tv_listviewnewsdetail_pubtime.setText(listDataSet.get(position).getPubdate());
+
+            // 点击的时候不会整个 listView 都刷新，所以点击的时候这里用不上了
+            // 但是，这里在下一次重新初始化 listView 的时候，就会发生作用。用户重新进来还是
+            // 可以看到哪些新闻上次已读
+            int id = listDataSet.get(position).getId();
+            // 判断一下这 id，是否在 config 里，如果已经包含了，就说明这个新闻已经被读过了
+            String readList = sp.getString("readList", "");
+            boolean contains = readList.contains(id + "");
+            // 读过的新闻，去显示灰色
+            if(contains) {
+                tv_listviewnewsdetail_title.setTextColor(Color.GRAY);
+            }
             return view;
         }
     }

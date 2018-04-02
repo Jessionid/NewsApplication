@@ -9,9 +9,11 @@
           <set>
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/Indicatorlibrary" />
+            <option value="$PROJECT_DIR$/JPushExample(884716)" />
             <option value="$PROJECT_DIR$/SlidingMenulibrary" />
             <option value="$PROJECT_DIR$/app" />
             <option value="$PROJECT_DIR$/indictorsample" />
+            <option value="$PROJECT_DIR$/notificationdemo" />
             <option value="$PROJECT_DIR$/toucheventapp" />
           </set>
         </option>
@@ -19,9 +21,11 @@
           <set>
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/Indicatorlibrary" />
+            <option value="$PROJECT_DIR$/JPushExample(884716)" />
             <option value="$PROJECT_DIR$/SlidingMenulibrary" />
             <option value="$PROJECT_DIR$/app" />
             <option value="$PROJECT_DIR$/indictorsample" />
+            <option value="$PROJECT_DIR$/notificationdemo" />
             <option value="$PROJECT_DIR$/toucheventapp" />
           </set>
         </option>

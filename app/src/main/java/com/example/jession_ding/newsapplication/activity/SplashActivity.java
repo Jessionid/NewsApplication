@@ -60,7 +60,7 @@ public class SplashActivity extends Activity {
             public void onAnimationEnd(Animation animation) {
                 //动画结束的时候 call
                 LogUtil.i(TAG,"onAnimation==>End");
-                //不能在OnCreate里直接跳到下一个页面
+                // 不能在OnCreate里直接跳到下一个页面
                 // 如果之前已经有进入过 guide，就让他直接进入主界面
                 boolean isShowGuide = config.getBoolean("isShowGuide", false);
                 if(isShowGuide) {   // true

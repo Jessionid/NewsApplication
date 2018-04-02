@@ -11,6 +11,18 @@ android {
         targetSdkVersion 26
         versionCode 1
         versionName "1.0"
+
+        ndk {
+            //选择要添加的对应cpu类型的.so库。
+            abiFilters 'armeabi', 'armeabi-v7a', 'arm64-v8a','x86', 'x86_64'
+            // 还可以添加 'x86', 'x86_64', 'mips', 'mips64'
+        }
+
+        manifestPlaceholders = [
+                JPUSH_PKGNAME : applicationId,
+                JPUSH_APPKEY : "3f4103de8fd239887f35426a", //JPush上注册的包名对应的appkey.
+                JPUSH_CHANNEL : "developer-default", //暂时填写默认值即可.
+        ]
     }
     buildTypes {
         release {
@@ -61,6 +73,8 @@ dependencies {
     compile 'org.xutils:xutils:3.3.36'
     compile files('libs/xUtils-2.6.14.jar')
     compile files('libs/gson-2.3.1.jar')
+    compile 'cn.jiguang.sdk:jpush:3.1.1'  // 此处以JPush 3.1.1 版本为例
+    compile 'cn.jiguang.sdk:jcore:1.1.9'  // 此处以JCore 1.1.9 版本为例
 }
 android {
     useLibrary'org.apache.http.legacy'

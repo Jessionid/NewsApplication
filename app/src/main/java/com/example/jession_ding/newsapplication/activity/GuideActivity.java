@@ -14,7 +14,9 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 
 import com.example.jession_ding.newsapplication.R;
+import com.example.jession_ding.newsapplication.utils.DensityUtils;
 import com.example.jession_ding.newsapplication.utils.LogUtil;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,6 +31,7 @@ public class GuideActivity extends AppCompatActivity {
     private final int PAGECOUNT = 3;
     private LinearLayout ll_guideactivity_indicator;
     private View rp_guideactivity;
+    private int width_in_pix;
 
     class MyPageInfo {
         ImageView pageIv;
@@ -70,7 +73,7 @@ public class GuideActivity extends AppCompatActivity {
                 // 更改小红点的位置：和红点 leftMargin 的关系 0-0 1-60 2-120 3-240
                 //拿到小红点已经有的 layoutParams
                 FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams) rp_guideactivity.getLayoutParams();
-                layoutParams.leftMargin = position*60 + (int)(60*positionOffset);
+                layoutParams.leftMargin = position*width_in_pix*2 + (int)(width_in_pix*2*positionOffset);
                 rp_guideactivity.setLayoutParams(layoutParams);
             }
             // 页面发生变化的时候，会传入当前是哪个 page
@@ -102,11 +105,13 @@ public class GuideActivity extends AppCompatActivity {
     private void initIndicator() {
         for(int i=0;i<PAGECOUNT;i++) {
             View view = new View(this);
+
+            width_in_pix = DensityUtils.dp2px(20, this);
             // 指定宽高，单位是像素
-            LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(40,40);
+            LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(width_in_pix, width_in_pix);
             // 设置 indicator 的间隔距离
             if(i!=0) {
-                layoutParams.leftMargin = 20;
+                layoutParams.leftMargin = width_in_pix;
             }
             view.setLayoutParams(layoutParams);
             view.setBackgroundResource(R.drawable.graypoint);

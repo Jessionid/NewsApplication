@@ -3,6 +3,8 @@ package com.example.jession_ding.newsapplication.activity;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
 import android.os.Bundle;
+import android.util.DisplayMetrics;
+
 import com.example.jession_ding.newsapplication.R;
 import com.example.jession_ding.newsapplication.fragment.ContentFragment;
 import com.example.jession_ding.newsapplication.fragment.LeftMenuFragment;
@@ -28,7 +30,11 @@ public class HomeActivity extends SlidingFragmentActivity {
         // TOUCHMODE_MARGIN，MARGIN 边界滑动
         slidingMenu.setTouchModeAbove(SlidingMenu.TOUCHMODE_FULLSCREEN);
         // 滑出右边显示的像素大小
-        slidingMenu.setBehindOffset(650);
+        // 在不同分辨率 屏幕上的差异比较大
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+        int widthPixels = displayMetrics.widthPixels;
+        slidingMenu.setBehindOffset((int) (widthPixels*0.75));
 
         // 用 Fragment 替换 FrameLayout
         fragmentManager = getFragmentManager();

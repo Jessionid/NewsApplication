@@ -9,6 +9,7 @@
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
       <module fileurl="file://$PROJECT_DIR$/indictorsample/indictorsample.iml" filepath="$PROJECT_DIR$/indictorsample/indictorsample.iml" />
       <module fileurl="file://$PROJECT_DIR$/notificationdemo/notificationdemo.iml" filepath="$PROJECT_DIR$/notificationdemo/notificationdemo.iml" />
+      <module fileurl="file://$PROJECT_DIR$/screenadapterapp/screenadapterapp.iml" filepath="$PROJECT_DIR$/screenadapterapp/screenadapterapp.iml" />
       <module fileurl="file://$PROJECT_DIR$/toucheventapp/toucheventapp.iml" filepath="$PROJECT_DIR$/toucheventapp/toucheventapp.iml" />
     </modules>
   </component>

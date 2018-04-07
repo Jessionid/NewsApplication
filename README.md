@@ -2,8 +2,6 @@
 
 > 新闻客户端
 
-[TOC]
-
 ### Part Ⅰ
 
 ##### 1. 开始打开 App 的动画效果
@@ -1733,20 +1731,506 @@ public void changeUI() {
 
 ### Part Ⅶ
 
-##### 1.
+##### 1. 修改问题
 
-##### 2.
+###### 1.1 第二次登录，向导取消
 
-##### 3.
+第一次从`SplashActivity`到`GuideActivity`,在`GuideActivity`中，记录下：
+```java
+// 如果显示了 guide，可以加入一个 flag 到 SP
+SharedPreferences config = getSharedPreferences("config", MODE_PRIVATE);
+SharedPreferences.Editor edit = config.edit();
+edit.putBoolean("isShowGuide",true);
+edit.commit();
+```
 
-##### 4.
+第二次进入`SplashActivity`，则先判断，
+```java
+SharedPreferences config = getSharedPreferences("config", MODE_PRIVATE);
+boolean isShowGuide = config.getBoolean("isShowGuide", false);
+if(isShowGuide) {   // true
+    startActivity(new Intent(SplashActivity.this,HomeActivity.class));
+} else{ // false
+    startActivity(new Intent(SplashActivity.this,GuideActivity.class));
+}
+```
+
+###### 1.2 点击看过的新闻 item 之后，标题颜色变淡
+
+在`lv_newsdetailpage_newslist.setOnItemClickListener()`的`onItemClick()`方法中，
+```java
+// 在这里记录下用户看过的新闻，记录当前 news 的一个 id
+int newsId = newsBean.getId();
+
+// readList.add(id1);
+// 35311 35312 35313
+// String read = "";
+// 先拿出来，再加
+String readList = sp.getString("readList","");
+// 先看看是否已经记录过该 news 已读
+// 若已经保存过了，则无需做任何事情，反之，则保存到 sp 中
+boolean contains = readList.contains(newsId + "");
+if(!contains) {
+    readList = readList + newsId + ",";
+    SharedPreferences.Editor edit = sp.edit();
+    edit.putString("readList",readList);
+    edit.commit();
+```
+拿到每条新闻的 id，看之前的`SharedPreferences`中，是否保存过。若有，则无需做其他。反之，则保存其中，保存时，加`,`隔开。
+```java
+// 方法一
+// myNewsListAdapter.notifyDataSetChanged();
+// 方法二
+// 只是想修改下当前点击的 item 的 textView 的颜色
+TextView tv_listviewnewsdetail_title = view.findViewById(R.id.tv_listviewnewsdetail_title);
+tv_listviewnewsdetail_title.setTextColor(Color.GRAY);
+}
+```
+接着，把此条新闻的标题颜色改变。
+
+下次，初始化`ListView`时，查看此新闻的`id`是否在`SharedPreferences`中有包含，有则改变颜色。
+```java
+// 点击的时候不会整个 listView 都刷新，所以点击的时候这里用不上了
+// 但是，这里在下一次重新初始化 listView 的时候，就会发生作用。用户重新进来还是
+// 可以看到哪些新闻上次已读
+int id = listDataSet.get(position).getId();
+// 判断一下这 id，是否在 config 里，如果已经包含了，就说明这个新闻已经被读过了
+String readList = sp.getString("readList", "");
+boolean contains = readList.contains(id + "");
+// 读过的新闻，去显示灰色
+if(contains) {
+    tv_listviewnewsdetail_title.setTextColor(Color.GRAY);
+}
+```
+
+##### 2. 缓存问题
+
+###### 2.1 Json 数据缓存
+```
+1. 为了节省用户流量
+2. 为了读取显示快速
+3. 一般不做内存缓存，因为占用内存太小
+```
+存放在`SharedPreferences`中，第一次网络访问时，存放其中
+```java
+SharedPrefUtil.saveJsonToCache(Constants.pictureList,responseInfo.result,mActivity);
+```
+之后，若需要数据，则先从`SharedPreferences`中拿取，若没有，再去网络中获取
+```java
+String jsonFromCache = SharedPrefUtil.getJsonFromCache(Constants.pictureList, mActivity);
+```
+
+`SharedPrefUtil`类的详细：
+```java
+public class SharedPrefUtil {
+    public static void saveJsonToCache(String key, String value, Context ctx) {
+        SharedPreferences sp = ctx.getSharedPreferences("Jsoncache",Context.MODE_PRIVATE);
+        SharedPreferences.Editor edit = sp.edit();
+        edit.putString(key,value);
+        edit.commit();
+    }
+    public static String getJsonFromCache(String key, Context ctx) {
+        SharedPreferences sp = ctx.getSharedPreferences("Jsoncache", Context.MODE_PRIVATE);
+        String jsonString = sp.getString(key, "");
+        return jsonString;
+    }
+}
+```
+
+Json 数据缓存，存储机制如下图：
+
+![存储机制图](http://wx3.sinaimg.cn/mw690/89195e42gy1fpv1wajg8fj20ia095aa6.jpg)
+
+###### 2.2 WebView 的缓存
+
+Android 系统，使用谷歌的浏览器内核`webkit`，所以`WebView`已做了缓存处理。
+
+###### 2.3 三级缓存机制解析
+```
+三级缓存机制也称三级存储机制：
+1. 一开始从云端(即网络端)获取数据，一份存入本地文件中(Cache 文件夹中或者 SD 卡中)，一份存入系统内存中
+2. 下次点击获取数据，先从系统内存中读取；若没有，则从本地文件中读取；若没有，再从网络中读取
+3. 下次从内存中读取若没有，则从本地文件中读取有数据时，存一份到系统的内存中去
+```
+缓存机制解析如下图：
+
+![缓存机制解析](http://wx3.sinaimg.cn/mw690/89195e42gy1fpv1uexiduj20rg0e9aar.jpg)
+
+###### 2.4 图片缓存
+
+一般的网络第三方库，都加图片的三级缓存，节省流量与提高效率
+
+在`MyBitmapUtils myBitmapUtils = new MyBitmapUtils(mActivity);`的`myBitmapUtils.display(iv_listviewpicturenews_img,listimage);`中，
+```java
+public class MyBitmapUtils {
+    private static final String TAG = "MyBitmapUtils";
+    public Activity mActivity;
+    public MyBitmapUtils(Activity mActivity) {
+        this.mActivity = mActivity;
+    }
+    // 从网络上获取图片，并显示在 imageView 上
+    public void display(ImageView iv,String imageUrl) {
+        // 先看看内存中的集合中是否有数据，若有，直接使用内存缓存
+        Bitmap bitmapFromMem = MemoryCacheUtils.getBitmapFromMem(imageUrl);
+        if(bitmapFromMem!=null) {
+            LogUtil.i(TAG,"使用内存缓存的数据！");
+            iv.setImageBitmap(bitmapFromMem);
+            return;
+        }
+        // 先看看文件缓存，有没有数据，如果有，就直接使用文件缓存
+        Bitmap bitmapFromFile = FileCacheUtils.getBitmapFromFile(imageUrl, mActivity);
+        if(bitmapFromFile!=null) {
+            // 有本地缓存，直接从本地获取数据
+            iv.setImageBitmap(bitmapFromFile);
+            return;
+        }
+        // 如果没有去访问网络，使用网络缓存
+        NetworkCacheUtils.getBitmapFromNet(iv,imageUrl,mActivity);
+    }
+}
+```
+先从系统的内存中获取，若没有，则从本地文件获取，若没有，再去网络中获取
+
+在`NetworkCacheUtils`中，从云端获取数据，
+```java
+public class NetworkCacheUtils {
+    private static final String TAG = "NetworkCacheUtils";
+
+    public static void getBitmapFromNet(ImageView iv, String imageUrl, Activity mActivity) {
+        final Activity activity = mActivity;
+        new AsyncTask<Object, Integer, Bitmap>() {
+            ImageView imageView;
+            String urlString;
+
+            @Override
+            protected Bitmap doInBackground(Object... params) {
+                LogUtil.i(TAG,"从网络缓存中获取！");
+                Bitmap bitmap = null;
+                imageView = (ImageView) params[0];
+                urlString = (String) params[1];
+                try {
+                    URL url = new URL(urlString);
+                    HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+
+                    connection.setRequestMethod("GET");
+                    connection.setReadTimeout(5000);
+                    connection.setConnectTimeout(5000);
+                    connection.connect();
+                    int responseCode = connection.getResponseCode();
+                    if (responseCode == 200) {
+                        InputStream inputStream = connection.getInputStream();
+                        bitmap = BitmapFactory.decodeStream(inputStream);
+                    }
+                } catch (MalformedURLException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                return bitmap;
+            }
+
+            @Override
+            protected void onPostExecute(Bitmap bitmap) {
+                if (bitmap != null) {
+                    // LogUtil.i(TAG, "MyBitmapUtils");
+                    imageView.setImageBitmap(bitmap);
+
+                    // 把 bitmap 图片的数据放到本地，生成二级缓存
+                    FileCacheUtils.saveBitmapToFile(bitmap, urlString, activity);
+                }
+            }
+        }.execute(iv, imageUrl);
+    }
+}
+```
+存一份到本地，在`FileCacheUtils`中，
+```java
+public class FileCacheUtils {
+    private static final String TAG = "FileCacheUtils";
+
+    public static void saveBitmapToFile(Bitmap bitmap, String url, Activity mActivity) {
+        // 以他作为文件名 MD5
+        String md5FileName = MD5Utils.getMD5(url);
+
+        File file = new File(mActivity.getCacheDir(), md5FileName);
+        try {
+            FileOutputStream fos = new FileOutputStream(file);
+            bitmap.compress(Bitmap.CompressFormat.PNG,100,fos);
+            fos.close();
+
+            // 在这里，可以顺便放到内存保留起来
+            MemoryCacheUtils.saveBitmapToMem(bitmap,url);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    public static Bitmap getBitmapFromFile(String url,Activity mActivity) {
+        Bitmap bitmap = null;
+        String md5FileName = MD5Utils.getMD5(url);
+        File file = new File(mActivity.getCacheDir(), md5FileName);
+        if(file.exists()) {
+            LogUtil.i(TAG, "有文件缓存，直接从本地缓存获取数据");
+            bitmap = BitmapFactory.decodeFile(file.getAbsolutePath());
+            MemoryCacheUtils.saveBitmapToMem(bitmap,url);
+            return bitmap;
+        } else{
+            LogUtil.i(TAG,"没有文件缓存");
+            return bitmap;
+        }
+    }
+}
+```
+存一份到系统内存，在`MemoryCacheUtils`中，
+```java
+public class MemoryCacheUtils {
+    private static final String TAG = "MemoryCacheUtils";
+    // static HashMap<String,Bitmap> memCache = new HashMap<String,Bitmap>();
+    // 改进版(防止 OOM)
+    // static HashMap<String,SoftReference<Bitmap>> memCache = new HashMap<String,SoftReference<Bitmap>>();
+    // 改进第二版
+    // Lru：Leaset Recently Used
+    // size 为虚拟机内存大小的：1/4 或者 1/8
+    /**
+     * 内存缓存:
+     * 因为从 Android 2.3 (API Level 9)开始，垃圾回收器会更倾向于回收持有软引用或弱引用的对象，
+     * 这让软引用和弱引用变得不再可靠。  Google建议使用 LruCache
+     */
+    static LruCache<String, Bitmap> memCache = new LruCache<String, Bitmap>((int) (MemoryComputingUtils.getMaxMemory() / 4)) {
+        @Override
+        protected int sizeOf(String key, Bitmap value) {
+            int byteCount = value.getByteCount();
+            LogUtil.i(TAG, "byteCount = " + byteCount);
+            return byteCount;//super.sizeOf(key, value);
+        }
+    };
+    // 使用这种写法，我们所有的 bitmap 都维护在 memCache 这个集合里，GC 的时候，任何 bitmap 都无法释放
+    // 随着加载的图片越来越多，该集合中维护的 bitmap,可能会造成 OOM
+
+    // 强引用，java 中的引用，默认都是强引用。（我们之前讲的垃圾回收机制，是基于强引用）
+    // 对于 GC 回收来说，如果该对象有另一个对象的到它的强引用，则该对象无法回收
+    // 软引用，当 GC 回收内存的时候，一般不会去回收软引用，但是当内存不够用的时候，就可以去回收软引用的内存
+    // 弱引用，GC 回收的时候，即便是内存够的时候，也有可能回收
+    // 虚引用(一般用不上)，对于引用对象之间的关系，没有任何影响，配合引用队列使用。每次要回收这种对象，会
+    // 把这个对象加入到一个引用队列。程序可以通过遍历这个引用队列，来看队列中是否有对应的虚引用。如果有，说明马上要被回收了。
+
+    /**
+     * <h3>Avoid Soft References for Caching</h3>
+     * In practice, soft references are inefficient for caching. The runtime doesn't
+     * have enough information on which references to clear and which to keep. Most
+     * fatally, it doesn't know what to do when given the choice between clearing a
+     * soft reference and growing the heap.
+     * <p>
+     * <p>The lack of information on the value to your application of each reference
+     * limits the usefulness of soft references. References that are cleared too
+     * early cause unnecessary work; those that are cleared too late waste memory.
+     * <p>
+     * <p>Most applications should use an {@code android.util.LruCache} instead of
+     * soft references. LruCache has an effective eviction policy and lets the user
+     * tune how much memory is allotted.
+     */
+    public static void saveBitmapToMem(Bitmap bitmap, String url) {
+        // memCache.put(url,new SoftReference<Bitmap>(bitmap));
+        Bitmap put = memCache.put(url, bitmap);
+        LogUtil.i(TAG, "put = " + put);
+    }
+
+    public static Bitmap getBitmapFromMem(String url) {
+/*        SoftReference<Bitmap> bitmapSoftReference = memCache.get(url);
+        if(bitmapSoftReference!=null) {
+            Bitmap bitmap = bitmapSoftReference.get();
+            return bitmap;
+        }*/
+        Bitmap bitmap = memCache.get(url);
+        if (bitmap != null) {
+            LogUtil.i(TAG, "bitmap = " + bitmap.toString());
+        } else {
+            LogUtil.i(TAG, "bitmap is null!");
+        }
+        return bitmap;
+    }
+}
+```
+```
+1. 使用 <key,value> 方式存储，一开始直接使用 HashMap<key,value>，由于 bitmap 太耗内存，报 OOM
+2. 在 HashMap<key,value> 中的 value，使用软引用，static HashMap<String,SoftReference<Bitmap>> memCache = new HashMap<String,SoftReference<Bitmap>>(); ,但效果一般
+    2.1 Java 虚拟机针对软引用，Most fatally, it doesn't know what to do when given the choice between clearing a soft reference and growing the heap.
+    2.2 从 Android 2.3 (API Level 9)开始，垃圾回收器会更倾向于回收持有软引用或弱引用的对象，这让软引用和弱引用变得不再可靠。  Google建议使用 LruCache
+3. 使用 LruCache<key,value> 类
+```
+
+使用`LruCache<key,value>`类，记得重写`sizeOf()`方法，
+```java
+    static LruCache<String, Bitmap> memCache = new LruCache<String, Bitmap>((int) (MemoryComputingUtils.getMaxMemory() / 4)) {
+        @Override
+        protected int sizeOf(String key, Bitmap value) {
+            int byteCount = value.getByteCount();
+            LogUtil.i(TAG, "byteCount = " + byteCount);
+            return byteCount;//super.sizeOf(key, value);
+        }
+    };
+```
 
 ### Part Ⅷ
 
-##### 1.
+##### 1. 推送的原理
+```
+功能：
+服务器主动推送一条信息到客户端
+通知栏——>有一些新的通知
 
-##### 2.
+具体细节：想要从服务器上获取最新的数据，尽可能的把服务器上的最新数据及时的给到用户
 
-##### 3.
+实现：
+poll：轮询，每隔一小段时间定时去服务器上查看最新的数据。timer，特点是实现起来比较简单。
+缺点：如果轮询的时间过短，比较耗流量，费电。若轮询的时间过长：30min，实时性会比较差。
 
-##### 4.
+push：推送
+    长连接：长时间的连接。xmpp，tcp/ip
+    心跳包：包头，没有数据。超时之前发一个数据包，维持长连接的有效性
+    服务器如果有最新的数据，直接通过长连接发送到客户端。客户端接受之后可以 update 到 UI 上。
+
+优点：比较省流量，耗电量，实时性非常好
+```
+
+##### 2. 第三方推送的使用(JPush)
+
+通知栏的显示并点击跳转
+
+例子：实现方法一
+
+```java
+Notification.Builder builder = new Notification.Builder(this);
+Intent intent = new Intent();
+intent.setAction("com.example.jession_ding.shownews");
+intent.putExtra("url","http://www.baidu.com");
+
+PendingIntent pendingIntent = PendingIntent.getActivity(this,100,intent,PendingIntent.FLAG_ONE_SHOT);
+
+builder.setSmallIcon(R.mipmap.ic_launcher);
+// builder.setLargeIcon();
+builder.setContentTitle("this is my notification title");
+builder.setContentText("this is my notification content");
+// builder.setAutoCancel(true);
+builder.setContentIntent(pendingIntent);
+Notification notification = builder.build();
+// notification.flags = Notification.FLAG_NO_CLEAR;
+NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+notificationManager.notify(1000,notification);
+```
+在 AndroidManifest 中，
+```java
+        <activity android:name=".ShowNewsActivity">
+            <intent-filter>
+                <action android:name="com.example.jession_ding.shownews"/>
+
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+```
+在 ShowNewsActivity 中，
+```java
+        Intent intent = getIntent();
+        String url = intent.getStringExtra("url");
+        TextView tv_shownewsactivity = (TextView) findViewById(R.id.tv_shownewsactivity);
+        tv_shownewsactivity.setText(url);
+```
+
+例子：实现方法二
+
+```java
+        String id = "channel_1";
+        String description = "123";
+        int importance = NotificationManager.IMPORTANCE_LOW;
+        NotificationChannel mChannel = new NotificationChannel(id, description, importance);
+
+        Notification.Builder builder = new Notification.Builder(this);
+
+        // 方法 1：
+ /*       Intent intent = new Intent();
+        intent.setAction("com.example.jession_ding.shownews");
+        intent.putExtra("url","http://www.baidu.com");
+
+        PendingIntent pendingIntent = PendingIntent.getActivity(this,100,intent,PendingIntent.FLAG_ONE_SHOT);*/
+
+        // 方法 2：
+        Intent intent = new Intent();
+        intent.setAction("com.example.jession_ding.sendbroadcast");
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 100, intent, PendingIntent.FLAG_ONE_SHOT);
+
+        builder.setSmallIcon(R.mipmap.ic_launcher);
+        // builder.setLargeIcon();
+        builder.setContentTitle("this is my notification title");
+        builder.setContentText("this is my notification content");
+        // builder.setAutoCancel(true);
+        builder.setContentIntent(pendingIntent);
+        Notification notification = builder.build();
+        // notification.flags = Notification.FLAG_NO_CLEAR;
+        NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        notificationManager.createNotificationChannel(mChannel);
+        notificationManager.notify(1000,notification);
+```
+在 AndroidManifest 中，
+```java
+        <receiver
+            android:name=".MyReceiver"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.example.jession_ding.sendbroadcast"/>
+
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </receiver>
+```
+
+在 MyReceiver 中，
+```java
+        Log.i(TAG,intent.getAction());
+        Intent intent1 = new Intent();
+        /*java.lang.RuntimeException: Unable to start receiver
+        com.example.jession_ding.newsapplication.notificationdemo.MyReceiver: android.util.AndroidRuntimeException:
+        Calling startActivity() from outside of an Activity context requires the FLAG_ACTIVITY_NEW_TASK flag.
+        Is this really what you want?*/
+        intent1.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        intent1.setAction("com.example.jession_ding.shownews");
+        intent1.putExtra("url","http://www.baidu.com");
+        context.startActivity(intent1);
+```
+
+集成极光推送，如下所示：
+
+http://docs.jiguang.cn/jpush/client/Android/android_guide/
+
+##### 3. 屏幕适配
+
+##### 3.1 图片适配
+根据不同的屏幕密度，选择不同的图片
+```
+对应文件夹       像素           设备密度
+drawable-ldpi:   240*320         0.75
+drawable-mdpi:   320*240          1
+drawable-hdpi:   480*800         1.5
+drawable-xhdpi:  1280*720         2
+drawable-xxhdpi: 1920*1080        3
+```
+
+##### 3.2 代码适配
+代码中，没办法使用 dp 作为单位
+```java
+public class DensityUtils {
+    public static int dp2px(int dp, Activity mActivity) {
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        mActivity.getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+        float density = displayMetrics.density;
+        int v = (int) (dp * density);
+        return v;
+    }
+    public static float px2dp(int px, Context ctx) {
+        float density = ctx.getResources().getDisplayMetrics().density;
+        float dp = px / density;
+        return dp;
+    }
+}
+```
